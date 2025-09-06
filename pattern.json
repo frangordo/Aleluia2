@@ -1,0 +1,866 @@
+[
+  {
+    "tile": "Padrao Quadrado",
+    "rotation": 90,
+    "coordinates": [
+      1,
+      1
+    ],
+    "color_fundo": "#6347b8",
+    "color_padrao": "#fd80ff",
+    "grid_x": 1,
+    "grid_y": 1
+  },
+  {
+    "tile": "Padrao Quadrado",
+    "rotation": 270,
+    "coordinates": [
+      1,
+      2
+    ],
+    "color_fundo": "#6347b8",
+    "color_padrao": "#fd80ff",
+    "grid_x": 1,
+    "grid_y": 2
+  },
+  {
+    "tile": "Padrao Quadrado",
+    "rotation": 0,
+    "coordinates": [
+      1,
+      3
+    ],
+    "color_fundo": "#ba75ff",
+    "color_padrao": "#a8fb93",
+    "grid_x": 1,
+    "grid_y": 3
+  },
+  {
+    "tile": "Padrao Quadrado",
+    "rotation": 0,
+    "coordinates": [
+      1,
+      4
+    ],
+    "color_fundo": "#ba75ff",
+    "color_padrao": "#a8fb93",
+    "grid_x": 1,
+    "grid_y": 4
+  },
+  {
+    "tile": "Padrao Quadrado",
+    "rotation": 90,
+    "coordinates": [
+      1,
+      5
+    ],
+    "color_fundo": "#a57373",
+    "color_padrao": "#ff6685",
+    "grid_x": 1,
+    "grid_y": 5
+  },
+  {
+    "tile": "Padrao Quadrado",
+    "rotation": 90,
+    "coordinates": [
+      1,
+      6
+    ],
+    "color_fundo": "#a57373",
+    "color_padrao": "#ff6685",
+    "grid_x": 1,
+    "grid_y": 6
+  },
+  {
+    "tile": "Padrao Quadrado",
+    "rotation": 90,
+    "coordinates": [
+      1,
+      7
+    ],
+    "color_fundo": "#a57373",
+    "color_padrao": "#ff6685",
+    "grid_x": 1,
+    "grid_y": 7
+  },
+  {
+    "tile": "Padrao Quadrado",
+    "rotation": 90,
+    "coordinates": [
+      1,
+      8
+    ],
+    "color_fundo": "#a57373",
+    "color_padrao": "#ff6685",
+    "grid_x": 1,
+    "grid_y": 8
+  },
+  {
+    "tile": "Padrao Quadrado",
+    "rotation": 90,
+    "coordinates": [
+      2,
+      1
+    ],
+    "color_fundo": "#6347b8",
+    "color_padrao": "#fd80ff",
+    "grid_x": 2,
+    "grid_y": 1
+  },
+  {
+    "tile": "Padrao Quadrado",
+    "rotation": 90,
+    "coordinates": [
+      2,
+      2
+    ],
+    "color_fundo": "#6347b8",
+    "color_padrao": "#fd80ff",
+    "grid_x": 2,
+    "grid_y": 2
+  },
+  {
+    "tile": "Padrao Quadrado",
+    "rotation": 0,
+    "coordinates": [
+      2,
+      3
+    ],
+    "color_fundo": "#ba75ff",
+    "color_padrao": "#a8fb93",
+    "grid_x": 2,
+    "grid_y": 3
+  },
+  {
+    "tile": "Padrao Quadrado",
+    "rotation": 0,
+    "coordinates": [
+      2,
+      4
+    ],
+    "color_fundo": "#ba75ff",
+    "color_padrao": "#a8fb93",
+    "grid_x": 2,
+    "grid_y": 4
+  },
+  {
+    "tile": "Padrao Quadrado",
+    "rotation": 270,
+    "coordinates": [
+      2,
+      5
+    ],
+    "color_fundo": "#a57373",
+    "color_padrao": "#ff6685",
+    "grid_x": 2,
+    "grid_y": 5
+  },
+  {
+    "tile": "Padrao Quadrado",
+    "rotation": 270,
+    "coordinates": [
+      2,
+      6
+    ],
+    "color_fundo": "#a57373",
+    "color_padrao": "#ff6685",
+    "grid_x": 2,
+    "grid_y": 6
+  },
+  {
+    "tile": "Padrao Quadrado",
+    "rotation": 270,
+    "coordinates": [
+      2,
+      7
+    ],
+    "color_fundo": "#a57373",
+    "color_padrao": "#ff6685",
+    "grid_x": 2,
+    "grid_y": 7
+  },
+  {
+    "tile": "Padrao Quadrado",
+    "rotation": 270,
+    "coordinates": [
+      2,
+      8
+    ],
+    "color_fundo": "#a57373",
+    "color_padrao": "#ff6685",
+    "grid_x": 2,
+    "grid_y": 8
+  },
+  {
+    "tile": "Padrao Quadrado",
+    "rotation": 0,
+    "coordinates": [
+      3,
+      1
+    ],
+    "color_fundo": "#ffa257",
+    "color_padrao": "#a8fb93",
+    "grid_x": 3,
+    "grid_y": 1
+  },
+  {
+    "tile": "Padrao Quadrado",
+    "rotation": 270,
+    "coordinates": [
+      3,
+      2
+    ],
+    "color_fundo": "#ffa257",
+    "color_padrao": "#a8fb93",
+    "grid_x": 3,
+    "grid_y": 2
+  },
+  {
+    "tile": "Padrao Quadrado",
+    "rotation": 180,
+    "coordinates": [
+      3,
+      3
+    ],
+    "color_fundo": "#a8fb93",
+    "color_padrao": "#6347b8",
+    "grid_x": 3,
+    "grid_y": 3
+  },
+  {
+    "tile": "Padrao Quadrado",
+    "rotation": 0,
+    "coordinates": [
+      3,
+      4
+    ],
+    "color_fundo": "#a8fb93",
+    "color_padrao": "#6347b8",
+    "grid_x": 3,
+    "grid_y": 4
+  },
+  {
+    "tile": "Padrao Quadrado",
+    "rotation": 180,
+    "coordinates": [
+      3,
+      5
+    ],
+    "color_fundo": "#a8fb93",
+    "color_padrao": "#6347b8",
+    "grid_x": 3,
+    "grid_y": 5
+  },
+  {
+    "tile": "Padrao Quadrado",
+    "rotation": 180,
+    "coordinates": [
+      3,
+      6
+    ],
+    "color_fundo": "#ff6685",
+    "color_padrao": "#fd80ff",
+    "grid_x": 3,
+    "grid_y": 6
+  },
+  {
+    "tile": "Padrao Quadrado",
+    "rotation": 90,
+    "coordinates": [
+      3,
+      7
+    ],
+    "color_fundo": "#ff6685",
+    "color_padrao": "#fd80ff",
+    "grid_x": 3,
+    "grid_y": 7
+  },
+  {
+    "tile": "Padrao Quadrado",
+    "rotation": 90,
+    "coordinates": [
+      3,
+      8
+    ],
+    "color_fundo": "#ffa257",
+    "color_padrao": "#fd80ff",
+    "grid_x": 3,
+    "grid_y": 8
+  },
+  {
+    "tile": "Padrao Quadrado",
+    "rotation": 90,
+    "coordinates": [
+      4,
+      1
+    ],
+    "color_fundo": "#ffa257",
+    "color_padrao": "#a8fb93",
+    "grid_x": 4,
+    "grid_y": 1
+  },
+  {
+    "tile": "Padrao Quadrado",
+    "rotation": 0,
+    "coordinates": [
+      4,
+      2
+    ],
+    "color_fundo": "#ffa257",
+    "color_padrao": "#a8fb93",
+    "grid_x": 4,
+    "grid_y": 2
+  },
+  {
+    "tile": "Padrao Quadrado",
+    "rotation": 0,
+    "coordinates": [
+      4,
+      3
+    ],
+    "color_fundo": "#a8fb93",
+    "color_padrao": "#6347b8",
+    "grid_x": 4,
+    "grid_y": 3
+  },
+  {
+    "tile": "Padrao Quadrado",
+    "rotation": 180,
+    "coordinates": [
+      4,
+      4
+    ],
+    "color_fundo": "#a8fb93",
+    "color_padrao": "#6347b8",
+    "grid_x": 4,
+    "grid_y": 4
+  },
+  {
+    "tile": "Padrao Quadrado",
+    "rotation": 0,
+    "coordinates": [
+      4,
+      5
+    ],
+    "color_fundo": "#a8fb93",
+    "color_padrao": "#6347b8",
+    "grid_x": 4,
+    "grid_y": 5
+  },
+  {
+    "tile": "Padrao Quadrado",
+    "rotation": 0,
+    "coordinates": [
+      4,
+      6
+    ],
+    "color_fundo": "#ff6685",
+    "color_padrao": "#fd80ff",
+    "grid_x": 4,
+    "grid_y": 6
+  },
+  {
+    "tile": "Padrao Quadrado",
+    "rotation": 270,
+    "coordinates": [
+      4,
+      7
+    ],
+    "color_fundo": "#ff6685",
+    "color_padrao": "#fd80ff",
+    "grid_x": 4,
+    "grid_y": 7
+  },
+  {
+    "tile": "Padrao Quadrado",
+    "rotation": 90,
+    "coordinates": [
+      4,
+      8
+    ],
+    "color_fundo": "#ffa257",
+    "color_padrao": "#fd80ff",
+    "grid_x": 4,
+    "grid_y": 8
+  },
+  {
+    "tile": "Padrao Quadrado",
+    "rotation": 180,
+    "coordinates": [
+      5,
+      1
+    ],
+    "color_fundo": "#ffa257",
+    "color_padrao": "#a8fb93",
+    "grid_x": 5,
+    "grid_y": 1
+  },
+  {
+    "tile": "Padrao Quadrado",
+    "rotation": 90,
+    "coordinates": [
+      5,
+      2
+    ],
+    "color_fundo": "#ffa257",
+    "color_padrao": "#a8fb93",
+    "grid_x": 5,
+    "grid_y": 2
+  },
+  {
+    "tile": "Padrao Quadrado",
+    "rotation": 180,
+    "coordinates": [
+      5,
+      3
+    ],
+    "color_fundo": "#a8fb93",
+    "color_padrao": "#6347b8",
+    "grid_x": 5,
+    "grid_y": 3
+  },
+  {
+    "tile": "Padrao Quadrado",
+    "rotation": 0,
+    "coordinates": [
+      5,
+      4
+    ],
+    "color_fundo": "#a8fb93",
+    "color_padrao": "#6347b8",
+    "grid_x": 5,
+    "grid_y": 4
+  },
+  {
+    "tile": "Padrao Quadrado",
+    "rotation": 180,
+    "coordinates": [
+      5,
+      5
+    ],
+    "color_fundo": "#a8fb93",
+    "color_padrao": "#6347b8",
+    "grid_x": 5,
+    "grid_y": 5
+  },
+  {
+    "tile": "Padrao Quadrado",
+    "rotation": 180,
+    "coordinates": [
+      5,
+      6
+    ],
+    "color_fundo": "#ff6685",
+    "color_padrao": "#fd80ff",
+    "grid_x": 5,
+    "grid_y": 6
+  },
+  {
+    "tile": "Padrao Quadrado",
+    "rotation": 90,
+    "coordinates": [
+      5,
+      7
+    ],
+    "color_fundo": "#ff6685",
+    "color_padrao": "#fd80ff",
+    "grid_x": 5,
+    "grid_y": 7
+  },
+  {
+    "tile": "Padrao Quadrado",
+    "rotation": 90,
+    "coordinates": [
+      5,
+      8
+    ],
+    "color_fundo": "#ffa257",
+    "color_padrao": "#fd80ff",
+    "grid_x": 5,
+    "grid_y": 8
+  },
+  {
+    "tile": "Padrao Quadrado",
+    "rotation": 0,
+    "coordinates": [
+      6,
+      1
+    ],
+    "color_fundo": "#ff6685",
+    "color_padrao": "#6347b8",
+    "grid_x": 6,
+    "grid_y": 1
+  },
+  {
+    "tile": "Padrao Quadrado",
+    "rotation": 180,
+    "coordinates": [
+      6,
+      2
+    ],
+    "color_fundo": "#ff6685",
+    "color_padrao": "#6347b8",
+    "grid_x": 6,
+    "grid_y": 2
+  },
+  {
+    "tile": "Padrao Quadrado",
+    "rotation": 0,
+    "coordinates": [
+      6,
+      3
+    ],
+    "color_fundo": "#ba75ff",
+    "color_padrao": "#a57373",
+    "grid_x": 6,
+    "grid_y": 3
+  },
+  {
+    "tile": "Padrao Quadrado",
+    "rotation": 180,
+    "coordinates": [
+      6,
+      4
+    ],
+    "color_fundo": "#ba75ff",
+    "color_padrao": "#a57373",
+    "grid_x": 6,
+    "grid_y": 4
+  },
+  {
+    "tile": "Padrao Quadrado",
+    "rotation": 270,
+    "coordinates": [
+      6,
+      5
+    ],
+    "color_fundo": "#ba75ff",
+    "color_padrao": "#a57373",
+    "grid_x": 6,
+    "grid_y": 5
+  },
+  {
+    "tile": "Padrao Quadrado",
+    "rotation": 0,
+    "coordinates": [
+      6,
+      6
+    ],
+    "color_fundo": "#a57373",
+    "color_padrao": "#ba75ff",
+    "grid_x": 6,
+    "grid_y": 6
+  },
+  {
+    "tile": "Padrao Quadrado",
+    "rotation": 0,
+    "coordinates": [
+      6,
+      7
+    ],
+    "color_fundo": "#a57373",
+    "color_padrao": "#ba75ff",
+    "grid_x": 6,
+    "grid_y": 7
+  },
+  {
+    "tile": "Padrao Quadrado",
+    "rotation": 0,
+    "coordinates": [
+      6,
+      8
+    ],
+    "color_fundo": "#ff6685",
+    "color_padrao": "#ba75ff",
+    "grid_x": 6,
+    "grid_y": 8
+  },
+  {
+    "tile": "Padrao Quadrado",
+    "rotation": 90,
+    "coordinates": [
+      7,
+      1
+    ],
+    "color_fundo": "#ff6685",
+    "color_padrao": "#6347b8",
+    "grid_x": 7,
+    "grid_y": 1
+  },
+  {
+    "tile": "Padrao Quadrado",
+    "rotation": 270,
+    "coordinates": [
+      7,
+      2
+    ],
+    "color_fundo": "#ff6685",
+    "color_padrao": "#6347b8",
+    "grid_x": 7,
+    "grid_y": 2
+  },
+  {
+    "tile": "Padrao Quadrado",
+    "rotation": 0,
+    "coordinates": [
+      7,
+      3
+    ],
+    "color_fundo": "#ba75ff",
+    "color_padrao": "#a57373",
+    "grid_x": 7,
+    "grid_y": 3
+  },
+  {
+    "tile": "Padrao Quadrado",
+    "rotation": 180,
+    "coordinates": [
+      7,
+      4
+    ],
+    "color_fundo": "#ba75ff",
+    "color_padrao": "#a57373",
+    "grid_x": 7,
+    "grid_y": 4
+  },
+  {
+    "tile": "Padrao Quadrado",
+    "rotation": 90,
+    "coordinates": [
+      7,
+      5
+    ],
+    "color_fundo": "#ba75ff",
+    "color_padrao": "#a57373",
+    "grid_x": 7,
+    "grid_y": 5
+  },
+  {
+    "tile": "Padrao Quadrado",
+    "rotation": 0,
+    "coordinates": [
+      7,
+      6
+    ],
+    "color_fundo": "#a57373",
+    "color_padrao": "#ba75ff",
+    "grid_x": 7,
+    "grid_y": 6
+  },
+  {
+    "tile": "Padrao Quadrado",
+    "rotation": 0,
+    "coordinates": [
+      7,
+      7
+    ],
+    "color_fundo": "#a57373",
+    "color_padrao": "#ba75ff",
+    "grid_x": 7,
+    "grid_y": 7
+  },
+  {
+    "tile": "Padrao Quadrado",
+    "rotation": 0,
+    "coordinates": [
+      7,
+      8
+    ],
+    "color_fundo": "#ff6685",
+    "color_padrao": "#ba75ff",
+    "grid_x": 7,
+    "grid_y": 8
+  },
+  {
+    "tile": "Padrao Quadrado",
+    "rotation": 0,
+    "coordinates": [
+      8,
+      1
+    ],
+    "color_fundo": "#ffa257",
+    "color_padrao": "#fd80ff",
+    "grid_x": 8,
+    "grid_y": 1
+  },
+  {
+    "tile": "Padrao Quadrado",
+    "rotation": 270,
+    "coordinates": [
+      8,
+      2
+    ],
+    "color_fundo": "#ffa257",
+    "color_padrao": "#fd80ff",
+    "grid_x": 8,
+    "grid_y": 2
+  },
+  {
+    "tile": "Padrao Quadrado",
+    "rotation": 0,
+    "coordinates": [
+      8,
+      3
+    ],
+    "color_fundo": "#ffa257",
+    "color_padrao": "#fd80ff",
+    "grid_x": 8,
+    "grid_y": 3
+  },
+  {
+    "tile": "Padrao Quadrado",
+    "rotation": 90,
+    "coordinates": [
+      8,
+      4
+    ],
+    "color_fundo": "#ba75ff",
+    "color_padrao": "#6347b8",
+    "grid_x": 8,
+    "grid_y": 4
+  },
+  {
+    "tile": "Padrao Quadrado",
+    "rotation": 90,
+    "coordinates": [
+      8,
+      5
+    ],
+    "color_fundo": "#ba75ff",
+    "color_padrao": "#6347b8",
+    "grid_x": 8,
+    "grid_y": 5
+  },
+  {
+    "tile": "Padrao Quadrado",
+    "rotation": 90,
+    "coordinates": [
+      8,
+      6
+    ],
+    "color_fundo": "#ba75ff",
+    "color_padrao": "#6347b8",
+    "grid_x": 8,
+    "grid_y": 6
+  },
+  {
+    "tile": "Padrao Quadrado",
+    "rotation": 0,
+    "coordinates": [
+      8,
+      7
+    ],
+    "color_fundo": "#6347b8",
+    "color_padrao": "#fd80ff",
+    "grid_x": 8,
+    "grid_y": 7
+  },
+  {
+    "tile": "Padrao Quadrado",
+    "rotation": 0,
+    "coordinates": [
+      8,
+      8
+    ],
+    "color_fundo": "#6347b8",
+    "color_padrao": "#fd80ff",
+    "grid_x": 8,
+    "grid_y": 8
+  },
+  {
+    "tile": "Padrao Quadrado",
+    "rotation": 90,
+    "coordinates": [
+      9,
+      1
+    ],
+    "color_fundo": "#ffa257",
+    "color_padrao": "#fd80ff",
+    "grid_x": 9,
+    "grid_y": 1
+  },
+  {
+    "tile": "Padrao Quadrado",
+    "rotation": 180,
+    "coordinates": [
+      9,
+      2
+    ],
+    "color_fundo": "#ffa257",
+    "color_padrao": "#fd80ff",
+    "grid_x": 9,
+    "grid_y": 2
+  },
+  {
+    "tile": "Padrao Quadrado",
+    "rotation": 90,
+    "coordinates": [
+      9,
+      3
+    ],
+    "color_fundo": "#ffa257",
+    "color_padrao": "#fd80ff",
+    "grid_x": 9,
+    "grid_y": 3
+  },
+  {
+    "tile": "Padrao Quadrado",
+    "rotation": 90,
+    "coordinates": [
+      9,
+      4
+    ],
+    "color_fundo": "#ba75ff",
+    "color_padrao": "#6347b8",
+    "grid_x": 9,
+    "grid_y": 4
+  },
+  {
+    "tile": "Padrao Quadrado",
+    "rotation": 90,
+    "coordinates": [
+      9,
+      5
+    ],
+    "color_fundo": "#ba75ff",
+    "color_padrao": "#6347b8",
+    "grid_x": 9,
+    "grid_y": 5
+  },
+  {
+    "tile": "Padrao Quadrado",
+    "rotation": 90,
+    "coordinates": [
+      9,
+      6
+    ],
+    "color_fundo": "#ba75ff",
+    "color_padrao": "#6347b8",
+    "grid_x": 9,
+    "grid_y": 6
+  },
+  {
+    "tile": "Padrao Quadrado",
+    "rotation": 0,
+    "coordinates": [
+      9,
+      7
+    ],
+    "color_fundo": "#6347b8",
+    "color_padrao": "#fd80ff",
+    "grid_x": 9,
+    "grid_y": 7
+  },
+  {
+    "tile": "Padrao Quadrado",
+    "rotation": 0,
+    "coordinates": [
+      9,
+      8
+    ],
+    "color_fundo": "#6347b8",
+    "color_padrao": "#fd80ff",
+    "grid_x": 9,
+    "grid_y": 8
+  }
+]

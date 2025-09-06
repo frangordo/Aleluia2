@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Pepe Pattern Viewer</title>
+  <style>
+    body { background: #222; color: #eee; text-align: center; }
+    canvas { background: #fff; margin: 20px auto; display: block; }
+    .form-section { margin: 20px auto; background: #333; padding: 20px; border-radius: 10px; width: 420px; }
+    .form-section label { display: inline-block; width: 120px; text-align: right; margin-right: 10px; }
+    .form-section input[type="number"] { width: 60px; }
+    .form-section input[type="color"] { width: 40px; height: 30px; vertical-align: middle; }
+    .form-section input[type="range"] { width: 120px; }
+    .button-row { margin: 10px 0; }
+    .button-row label { width: 80px; }
+    .off-label { margin-left: 10px; }
+  </style>
+</head>
+<body>
+  <h1>Pepe Pattern Viewer</h1>
+  <form id="settingsForm" class="form-section">
+    <div>
+      <label for="knob_down">Knob Down:</label>
+      <input type="number" id="knob_down" name="knob_down" min="1" max="10" required>
+    </div>
+    <div>
+      <label for="slider">Slider:</label>
+      <input type="range" id="slider" name="slider" min="0" max="100">
+      <span id="sliderValue"></span>
+    </div>
+    <div>
+      <label>Switch:</label>
+      <input type="radio" id="switch_left" name="switch" value="left">
+      <label for="switch_left">Left</label>
+      <input type="radio" id="switch_center" name="switch" value="center">
+      <label for="switch_center">Center</label>
+      <input type="radio" id="switch_right" name="switch" value="right">
+      <label for="switch_right">Right</label>
+    </div>
+    <div>
+      <label for="canvas_width">Canvas Width:</label>
+      <input type="number" id="canvas_width" name="canvas_width" min="10" max="1000" required>
+    </div>
+    <div>
+      <label for="canvas_height">Canvas Height:</label>
+      <input type="number" id="canvas_height" name="canvas_height" min="10" max="1000" required>
+    </div>
+    <div class="button-row">
+      <label>Buttons:</label>
+      <div>
+        <!-- Button color/off inputs will be inserted here by JS -->
+        <span id="buttonInputs"></span>
+      </div>
+    </div>
+    <button type="submit">Save Settings</button>
+  </form>
+  <button id="generateBtn">Generate New Pattern</button>
+  <canvas id="patternCanvas"></canvas>
+  <script>
+    // Helper to load JSON
+    async function loadJSON(url) {
+      const resp = await fetch(url);
+      return await resp.json();
+    }
+
+    // Helper to POST JSON
+    async function postJSON(url, data) {
+      await fetch(url, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data)
+      });
+    }
+
+    // Dynamically create button color/off inputs
+    function renderButtonInputs(data) {
+      const container = document.getElementById('buttonInputs');
+      container.innerHTML = '';
+      for (let i = 0; i <= 8; i++) {
+        const btnKey = `button_${i}`;
+        const value = data[btnKey] || 'off';
+        const color = (value !== 'off') ? value : '#ffffff';
+        const checked = (value === 'off') ? 'checked' : '';
+        container.innerHTML += `
+          <div style="display:inline-block; margin:0 5px;">
+            <label for="${btnKey}">#${i}</label>
+            <input type="color" id="${btnKey}" name="${btnKey}" value="${color}" ${value === 'off' ? 'disabled' : ''}>
+            <input type="checkbox" id="${btnKey}_off" name="${btnKey}_off" ${checked} onchange="toggleButtonColor('${btnKey}')">
+            <label for="${btnKey}_off" class="off-label">off</label>
+          </div>
+        `;
+      }
+    }
+
+    // Toggle color input enabled/disabled
+    window.toggleButtonColor = function(btnKey) {
+      const colorInput = document.getElementById(btnKey);
+      const offCheckbox = document.getElementById(btnKey + '_off');
+      colorInput.disabled = offCheckbox.checked;
+    };
+
+    // Fill form with data.json values
+    async function fillForm() {
+      const data = await loadJSON('data.json');
+      document.getElementById('knob_down').value = data.knob_down || 1;
+      document.getElementById('slider').value = data.slider || 0;
+      document.getElementById('sliderValue').textContent = data.slider || 0;
+      if (data.switch === 'left') document.getElementById('switch_left').checked = true;
+      else if (data.switch === 'right') document.getElementById('switch_right').checked = true;
+      else document.getElementById('switch_center').checked = true;
+      document.getElementById('canvas_width').value = data.canvas_width || 500;
+      document.getElementById('canvas_height').value = data.canvas_height || 500;
+      renderButtonInputs(data);
+    }
+
+    // Update slider value display
+    document.getElementById('slider').oninput = function() {
+      document.getElementById('sliderValue').textContent = this.value;
+    };
+
+    // Save form to data.json
+    document.getElementById('settingsForm').onsubmit = async function(e) {
+      e.preventDefault();
+      const data = {};
+      data.knob_down = parseInt(document.getElementById('knob_down').value);
+      data.slider = parseInt(document.getElementById('slider').value);
+      data.switch = document.querySelector('input[name="switch"]:checked').value;
+      data.canvas_width = parseInt(document.getElementById('canvas_width').value);
+      data.canvas_height = parseInt(document.getElementById('canvas_height').value);
+      for (let i = 0; i <= 8; i++) {
+        const btnKey = `button_${i}`;
+        const colorInput = document.getElementById(btnKey);
+        const offCheckbox = document.getElementById(btnKey + '_off');
+        data[btnKey] = offCheckbox.checked ? 'off' : colorInput.value;
+      }
+      await postJSON('/data.json', data);
+      await drawPattern();
+    };
+
+    // Drawing logic (unchanged)
+    function resolveColor(c) {
+      if (!c) return "#000";
+      return c;
+    }
+
+    function drawTile(ctx, tile, x, y, size) {
+      ctx.save();
+      ctx.translate(x + size/2, y + size/2);
+      ctx.rotate((tile.rotation || 0) * Math.PI / 180);
+      ctx.translate(-size/2, -size/2);
+
+      // Background
+      ctx.fillStyle = resolveColor(tile.color_fundo);
+      ctx.fillRect(0, 0, size, size);
+
+      if (tile.tile === "Padrao Quadrado") {
+        ctx.fillStyle = resolveColor(tile.color_padrao);
+        ctx.fillRect(0, 0, size/2, size);
+      } else if (tile.tile === "Padrao Triangulos") {
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(size, 0);
+        ctx.lineTo(0, size);
+        ctx.closePath();
+        ctx.fillStyle = resolveColor(tile.color_padrao);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    async function drawPattern() {
+      const pattern = await loadJSON('pattern.json');
+      const data = await loadJSON('data.json');
+      const canvas = document.getElementById('patternCanvas');
+      const width = data.canvas_width || 500;
+      const height = data.canvas_height || 500;
+      canvas.width = width;
+      canvas.height = height;
+
+      let maxX = 0, maxY = 0;
+      pattern.forEach(tile => {
+        if (tile.grid_x > maxX) maxX = tile.grid_x;
+        if (tile.grid_y > maxY) maxY = tile.grid_y;
+      });
+      const cols = maxX;
+      const rows = maxY;
+      const tileSize = Math.min(width / cols, height / rows);
+      const offsetX = (width - tileSize * cols) / 2;
+      const offsetY = (height - tileSize * rows) / 2;
+
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, width, height);
+
+      pattern.forEach(tile => {
+        const x = offsetX + (tile.grid_x - 1) * tileSize;
+        const y = offsetY + (tile.grid_y - 1) * tileSize;
+        drawTile(ctx, tile, x, y, tileSize);
+      });
+    }
+
+    document.getElementById('generateBtn').onclick = async function() {
+      await fetch('/generate', {method: 'POST'});
+      setTimeout(drawPattern, 300);
+    };
+
+    // Initial load
+    fillForm();
+    drawPattern();
+  </script>
+</body>
+</html>
