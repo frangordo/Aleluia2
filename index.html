@@ -6,49 +6,101 @@
   <style>
     body { background: #222; color: #eee; text-align: center; }
     canvas { background: #fff; margin: 20px auto; display: block; }
-    .form-section { margin: 20px auto; background: #333; padding: 20px; border-radius: 10px; width: 420px; }
-    .form-section label { display: inline-block; width: 120px; text-align: right; margin-right: 10px; }
+    .form-section {
+      margin: 20px auto;
+      background: #333;
+      padding: 20px;
+      border-radius: 10px;
+      width: 420px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      align-items: center;
+    }
+    .form-row {
+      display: flex;
+      align-items: center;
+      width: 100%;
+      justify-content: center;
+      gap: 10px;
+    }
+    .form-section label {
+      min-width: 110px;
+      text-align: right;
+      margin-right: 10px;
+      flex-shrink: 0;
+    }
     .form-section input[type="number"] { width: 60px; }
     .form-section input[type="color"] { width: 40px; height: 30px; vertical-align: middle; }
     .form-section input[type="range"] { width: 120px; }
-    .button-row { margin: 10px 0; }
-    .button-row label { width: 80px; }
+    .button-row label { min-width: 80px; text-align: right; }
     .off-label { margin-left: 10px; }
+    .switch-group {
+      display: flex;
+      gap: 8px;
+      margin-left: 5px;
+    }
+    .switch-radio {
+      appearance: none;
+      width: 22px;
+      height: 22px;
+      border: 2px solid #888;
+      border-radius: 50%;
+      background: #222;
+      cursor: pointer;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      position: relative;
+    }
+    .switch-radio:checked {
+      border-color: #4caf50;
+      box-shadow: 0 0 0 2px #4caf5055;
+      background: #4caf50;
+    }
+    .button-row {
+      display: flex;
+      align-items: center;
+      width: 100%;
+      justify-content: center;
+      gap: 10px;
+    }
+    #buttonInputs > div {
+      display: inline-block;
+      margin: 0 2px;
+      vertical-align: middle;
+    }
   </style>
 </head>
 <body>
   <h1>Pepe Pattern Viewer</h1>
   <form id="settingsForm" class="form-section">
-    <div>
-      <label for="knob_down">Knob Down:</label>
+    <div class="form-row">
+      <label for="knob_down">Zoom:</label>
       <input type="number" id="knob_down" name="knob_down" min="1" max="10" required>
     </div>
-    <div>
+    <div class="form-row">
       <label for="slider">Slider:</label>
       <input type="range" id="slider" name="slider" min="0" max="100">
       <span id="sliderValue"></span>
     </div>
-    <div>
+    <div class="form-row">
       <label>Switch:</label>
-      <input type="radio" id="switch_left" name="switch" value="left">
-      <label for="switch_left">Left</label>
-      <input type="radio" id="switch_center" name="switch" value="center">
-      <label for="switch_center">Center</label>
-      <input type="radio" id="switch_right" name="switch" value="right">
-      <label for="switch_right">Right</label>
+      <span class="switch-group">
+        <input type="radio" id="switch_left" class="switch-radio" name="switch" value="left">
+        <input type="radio" id="switch_center" class="switch-radio" name="switch" value="center">
+        <input type="radio" id="switch_right" class="switch-radio" name="switch" value="right">
+      </span>
     </div>
-    <div>
+    <div class="form-row">
       <label for="canvas_width">Canvas Width:</label>
       <input type="number" id="canvas_width" name="canvas_width" min="10" max="1000" required>
     </div>
-    <div>
+    <div class="form-row">
       <label for="canvas_height">Canvas Height:</label>
       <input type="number" id="canvas_height" name="canvas_height" min="10" max="1000" required>
     </div>
     <div class="button-row">
       <label>Buttons:</label>
       <div>
-        <!-- Button color/off inputs will be inserted here by JS -->
         <span id="buttonInputs"></span>
       </div>
     </div>
@@ -76,7 +128,7 @@
     function renderButtonInputs(data) {
       const container = document.getElementById('buttonInputs');
       container.innerHTML = '';
-      for (let i = 0; i <= 8; i++) {
+      for (let i = 0; i <= 9; i++) { // Changed from 8 to 9
         const btnKey = `button_${i}`;
         const value = data[btnKey] || 'off';
         const color = (value !== 'off') ? value : '#ffffff';
@@ -127,7 +179,7 @@
       data.switch = document.querySelector('input[name="switch"]:checked').value;
       data.canvas_width = parseInt(document.getElementById('canvas_width').value);
       data.canvas_height = parseInt(document.getElementById('canvas_height').value);
-      for (let i = 0; i <= 8; i++) {
+      for (let i = 0; i <= 9; i++) { // Changed from 8 to 9
         const btnKey = `button_${i}`;
         const colorInput = document.getElementById(btnKey);
         const offCheckbox = document.getElementById(btnKey + '_off');
