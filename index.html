@@ -158,6 +158,11 @@
     <h1>Pepe Pattern Viewer</h1>
     <canvas id="patternCanvas"></canvas>
     <button id="generateBtn">Generate New Pattern</button>
+    <div style="margin-top:10px;">
+      <button id="backBtn" disabled>&#8592; Go Back</button>
+      <button id="forwardBtn" disabled>Go Forward &#8594;</button>
+      <button id="printBtn">🖨️ Print Instructions</button>
+    </div>
   </div>
   <div id="showSettingsTab">
     <span style="font-size:1.3em;">&#9654;</span> PepesMachine
@@ -293,8 +298,7 @@
         data[btnKey] = offCheckbox.checked ? 'off' : colorInput.value;
       }
       await postJSON('/data.json', data);
-      await fetch('/generate', {method: 'POST'});
-      setTimeout(drawPattern, 300);
+      await generateAndSaveHistory();
     }
 
     // Attach auto-save to all inputs in the form
@@ -367,10 +371,137 @@
       });
     }
 
-    document.getElementById('generateBtn').onclick = async function() {
+    // Pattern history management
+    let patternHistory = [];
+    let historyIndex = -1;
+    let debounceTimer = null;
+
+    function patternsAreEqual(a, b) {
+      return JSON.stringify(a) === JSON.stringify(b);
+    }
+
+    function loadHistory() {
+      const hist = localStorage.getItem('patternHistory');
+      if (hist) {
+        patternHistory = JSON.parse(hist);
+        historyIndex = parseInt(localStorage.getItem('historyIndex')) || (patternHistory.length - 1);
+      }
+      updateHistoryButtons();
+    }
+
+    function saveHistory() {
+      localStorage.setItem('patternHistory', JSON.stringify(patternHistory));
+      localStorage.setItem('historyIndex', historyIndex);
+      updateHistoryButtons();
+    }
+
+    function updateHistoryButtons() {
+      document.getElementById('backBtn').disabled = historyIndex <= 0;
+      document.getElementById('forwardBtn').disabled = historyIndex >= patternHistory.length - 1;
+    }
+
+    async function fetchCurrentPattern() {
+      return await loadJSON('pattern.json');
+    }
+
+    async function drawPatternFromHistory(idx) {
+      if (patternHistory[idx]) {
+        const pattern = patternHistory[idx];
+        const data = await loadJSON('data.json');
+        const canvas = document.getElementById('patternCanvas');
+        const width = data.canvas_width || 500;
+        const height = data.canvas_height || 500;
+        canvas.width = width;
+        canvas.height = height;
+
+        let maxX = 0, maxY = 0;
+        pattern.forEach(tile => {
+          if (tile.grid_x > maxX) maxX = tile.grid_x;
+          if (tile.grid_y > maxY) maxY = tile.grid_y;
+        });
+        const cols = maxX;
+        const rows = maxY;
+        const tileSize = Math.min(width / cols, height / rows);
+        const offsetX = (width - tileSize * cols) / 2;
+        const offsetY = (height - tileSize * rows) / 2;
+
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, width, height);
+
+        pattern.forEach(tile => {
+          const x = offsetX + (tile.grid_x - 1) * tileSize;
+          const y = offsetY + (tile.grid_y - 1) * tileSize;
+          drawTile(ctx, tile, x, y, tileSize);
+        });
+      }
+      updateHistoryButtons();
+    }
+
+    // On new generation, add to history (debounced)
+    async function generateAndSaveHistory() {
       await fetch('/generate', {method: 'POST'});
-      setTimeout(drawPattern, 300);
+      setTimeout(async () => {
+        const pattern = await fetchCurrentPattern();
+        // If we're not at the end, cut forward history
+        if (historyIndex < patternHistory.length - 1) {
+          patternHistory = patternHistory.slice(0, historyIndex + 1);
+        }
+        // Avoid duplicates
+        if (patternHistory.length === 0 || !patternsAreEqual(pattern, patternHistory[patternHistory.length - 1])) {
+          patternHistory.push(pattern);
+          // Limit history to 20 generations
+          if (patternHistory.length > 20) {
+            patternHistory = patternHistory.slice(patternHistory.length - 20);
+          }
+          historyIndex = patternHistory.length - 1;
+          saveHistory();
+        } else {
+          // If duplicate, just update index
+          historyIndex = patternHistory.length - 1;
+          saveHistory();
+        }
+        drawPatternFromHistory(historyIndex);
+      }, 300);
+    }
+
+    document.getElementById('generateBtn').onclick = generateAndSaveHistory;
+
+    document.getElementById('backBtn').onclick = function() {
+      if (historyIndex > 0) {
+        historyIndex--;
+        saveHistory();
+        drawPatternFromHistory(historyIndex);
+      }
     };
+
+    document.getElementById('forwardBtn').onclick = function() {
+      if (historyIndex < patternHistory.length - 1) {
+        historyIndex++;
+        saveHistory();
+        drawPatternFromHistory(historyIndex);
+      }
+    };
+
+    // Debounced auto-save and generate
+    async function autoSaveAndGenerate() {
+      const data = {};
+      data.knob_down = parseInt(document.getElementById('knob_down').value);
+      data.slider = parseInt(document.getElementById('slider').value);
+      data.switch = document.querySelector('input[name="switch"]:checked').value;
+      data.canvas_width = parseInt(document.getElementById('canvas_width').value);
+      data.canvas_height = parseInt(document.getElementById('canvas_height').value);
+      for (let i = 0; i <= 9; i++) {
+        const btnKey = `button_${i}`;
+        const colorInput = document.getElementById(btnKey);
+        const offCheckbox = document.getElementById(btnKey + '_off');
+        data[btnKey] = offCheckbox.checked ? 'off' : colorInput.value;
+      }
+      await postJSON('/data.json', data);
+
+      // Debounce pattern generation
+      if (debounceTimer) clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(generateAndSaveHistory, 400);
+    }
 
     // Overlay logic
     const settingsOverlay = document.getElementById('settingsOverlay');
@@ -396,7 +527,43 @@
 
     // Initial load
     fillForm().then(attachAutoSave);
-    drawPattern();
+    loadHistory();
+    // If history exists, draw last pattern, else draw current
+    if (patternHistory.length > 0) {
+      drawPatternFromHistory(historyIndex);
+    } else {
+      drawPattern();
+    }
+
+    // Generate drawing instructions from a pattern array
+    function getDrawingInstructions(pattern) {
+      let instructions = [];
+      pattern.forEach((tile, idx) => {
+        instructions.push(
+          `Tile ${idx + 1}: Type=${tile.tile}, Grid=(${tile.grid_x},${tile.grid_y}), Rotation=${tile.rotation || 0}, ` +
+          `Background=${tile.color_fundo}, PatternColor=${tile.color_padrao}`
+        );
+      });
+      return instructions.join('\n');
+    }
+
+    // Print button logic
+    document.getElementById('printBtn').onclick = function() {
+      let pattern = patternHistory[historyIndex];
+      if (!pattern) return;
+      const instructions = getDrawingInstructions(pattern);
+      const blob = new Blob([instructions], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `pepe_pattern_instructions.txt`;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }, 100);
+    };
   </script>
 </body>
 </html>
