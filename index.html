@@ -4,14 +4,89 @@
   <meta charset="UTF-8">
   <title>Pepe Pattern Viewer</title>
   <style>
-    body { background: #222; color: #eee; text-align: center; }
-    canvas { background: #fff; margin: 20px auto; display: block; }
-    .form-section {
-      margin: 20px auto;
+    body { background: #222; color: #eee; margin: 0; padding: 0; }
+    #mainCanvasContainer {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      width: 100vw;
+    }
+    canvas { background: #fff; margin: 20px auto; display: block; box-shadow: 0 2px 16px #0006; }
+    #settingsOverlay {
+      position: fixed;
+      top: 0; left: 0; width: 100vw; height: 100vh;
+      background: #222e;
+      display: none;
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+      animation: fadeIn 0.3s;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    #settingsPanel {
       background: #333;
-      padding: 20px;
+      padding: 30px 20px 20px 20px;
+      border-radius: 16px;
+      box-shadow: 0 4px 32px #000a;
+      max-width: 440px;
+      width: 90vw;
+      max-height: 90vh;
+      overflow-y: auto;
+      position: relative;
+      margin: auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    #showSettingsTab {
+      position: fixed;
+      top: 40px;
+      right: 0;
+      background: #4caf50;
+      color: #fff;
+      border-radius: 8px 0 0 8px;
+      padding: 12px 24px 12px 12px;
+      font-size: 1.1em;
+      font-weight: bold;
+      cursor: pointer;
+      z-index: 101;
+      box-shadow: -2px 2px 10px #0006;
+      transition: background 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    #showSettingsTab:hover {
+      background: #388e3c;
+    }
+    #closeSettingsBtn {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      background: #222;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 6px 14px;
+      font-size: 1em;
+      cursor: pointer;
+      box-shadow: 0 2px 8px #0004;
+      transition: background 0.2s;
+    }
+    #closeSettingsBtn:hover {
+      background: #444;
+    }
+    .form-section {
+      margin: 0 auto;
+      background: #333;
+      padding: 0;
       border-radius: 10px;
-      width: 420px;
+      width: 100%;
       display: flex;
       flex-direction: column;
       gap: 16px;
@@ -68,46 +143,64 @@
       margin: 0 2px;
       vertical-align: middle;
     }
+    @media (max-width: 600px) {
+      #settingsPanel {
+        max-width: 98vw;
+        padding: 18px 2vw 10px 2vw;
+      }
+      .form-section label { min-width: 80px; font-size: 0.95em; }
+      #showSettingsTab { font-size: 1em; padding: 10px 18px 10px 8px; }
+    }
   </style>
 </head>
 <body>
-  <h1>Pepe Pattern Viewer</h1>
-  <form id="settingsForm" class="form-section">
-    <div class="form-row">
-      <label for="knob_down">Zoom:</label>
-      <input type="number" id="knob_down" name="knob_down" min="1" max="10" required>
+  <div id="mainCanvasContainer">
+    <h1>Pepe Pattern Viewer</h1>
+    <canvas id="patternCanvas"></canvas>
+    <button id="generateBtn">Generate New Pattern</button>
+  </div>
+  <div id="showSettingsTab">
+    <span style="font-size:1.3em;">&#9654;</span> PepesMachine
+  </div>
+  <div id="settingsOverlay">
+    <div id="settingsPanel">
+      <button id="closeSettingsBtn">&#8592; Back to Canvas</button>
+      <form id="settingsForm" class="form-section">
+        <div class="form-row">
+          <label for="knob_down">Zoom:</label>
+          <input type="number" id="knob_down" name="knob_down" min="1" max="10" required>
+        </div>
+        <div class="form-row">
+          <label for="slider">Slider:</label>
+          <input type="range" id="slider" name="slider" min="0" max="100">
+          <span id="sliderValue"></span>
+        </div>
+        <div class="form-row">
+          <label>Switch:</label>
+          <span class="switch-group">
+            <input type="radio" id="switch_left" class="switch-radio" name="switch" value="left">
+            <input type="radio" id="switch_center" class="switch-radio" name="switch" value="center">
+            <input type="radio" id="switch_right" class="switch-radio" name="switch" value="right">
+          </span>
+        </div>
+        <div class="form-row">
+          <label for="canvas_width">Canvas Width:</label>
+          <input type="number" id="canvas_width" name="canvas_width" min="10" max="1000" required>
+        </div>
+        <div class="form-row">
+          <label for="canvas_height">Canvas Height:</label>
+          <input type="number" id="canvas_height" name="canvas_height" min="10" max="1000" required>
+        </div>
+        <div class="button-row">
+          <label>Buttons:</label>
+          <div>
+            <span id="buttonInputs"></span>
+          </div>
+        </div>
+        <button type="submit">Save Settings</button>
+      </form>
     </div>
-    <div class="form-row">
-      <label for="slider">Slider:</label>
-      <input type="range" id="slider" name="slider" min="0" max="100">
-      <span id="sliderValue"></span>
-    </div>
-    <div class="form-row">
-      <label>Switch:</label>
-      <span class="switch-group">
-        <input type="radio" id="switch_left" class="switch-radio" name="switch" value="left">
-        <input type="radio" id="switch_center" class="switch-radio" name="switch" value="center">
-        <input type="radio" id="switch_right" class="switch-radio" name="switch" value="right">
-      </span>
-    </div>
-    <div class="form-row">
-      <label for="canvas_width">Canvas Width:</label>
-      <input type="number" id="canvas_width" name="canvas_width" min="10" max="1000" required>
-    </div>
-    <div class="form-row">
-      <label for="canvas_height">Canvas Height:</label>
-      <input type="number" id="canvas_height" name="canvas_height" min="10" max="1000" required>
-    </div>
-    <div class="button-row">
-      <label>Buttons:</label>
-      <div>
-        <span id="buttonInputs"></span>
-      </div>
-    </div>
-    <button type="submit">Save Settings</button>
-  </form>
-  <button id="generateBtn">Generate New Pattern</button>
-  <canvas id="patternCanvas"></canvas>
+  </div>
   <script>
     // Helper to load JSON
     async function loadJSON(url) {
@@ -128,7 +221,7 @@
     function renderButtonInputs(data) {
       const container = document.getElementById('buttonInputs');
       container.innerHTML = '';
-      for (let i = 0; i <= 9; i++) { // Changed from 8 to 9
+      for (let i = 0; i <= 9; i++) {
         const btnKey = `button_${i}`;
         const value = data[btnKey] || 'off';
         const color = (value !== 'off') ? value : '#ffffff';
@@ -179,7 +272,7 @@
       data.switch = document.querySelector('input[name="switch"]:checked').value;
       data.canvas_width = parseInt(document.getElementById('canvas_width').value);
       data.canvas_height = parseInt(document.getElementById('canvas_height').value);
-      for (let i = 0; i <= 9; i++) { // Changed from 8 to 9
+      for (let i = 0; i <= 9; i++) {
         const btnKey = `button_${i}`;
         const colorInput = document.getElementById(btnKey);
         const offCheckbox = document.getElementById(btnKey + '_off');
@@ -253,6 +346,20 @@
     document.getElementById('generateBtn').onclick = async function() {
       await fetch('/generate', {method: 'POST'});
       setTimeout(drawPattern, 300);
+    };
+
+    // Overlay logic
+    const settingsOverlay = document.getElementById('settingsOverlay');
+    const showSettingsTab = document.getElementById('showSettingsTab');
+    const closeSettingsBtn = document.getElementById('closeSettingsBtn');
+
+    showSettingsTab.onclick = function() {
+      settingsOverlay.style.display = 'flex';
+      showSettingsTab.style.display = 'none';
+    };
+    closeSettingsBtn.onclick = function() {
+      settingsOverlay.style.display = 'none';
+      showSettingsTab.style.display = 'flex';
     };
 
     // Initial load
