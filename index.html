@@ -168,7 +168,8 @@
       <form id="settingsForm" class="form-section">
         <div class="form-row">
           <label for="knob_down">Zoom:</label>
-          <input type="number" id="knob_down" name="knob_down" min="1" max="10" required>
+          <input type="range" id="knob_down" name="knob_down" min="1" max="10" step="1">
+          <span id="zoomValue"></span>
         </div>
         <div class="form-row">
           <label for="slider">Slider:</label>
@@ -197,7 +198,7 @@
             <span id="buttonInputs"></span>
           </div>
         </div>
-        <button type="submit">Save Settings</button>
+        <!-- Removed the Save Settings button -->
       </form>
     </div>
   </div>
@@ -229,25 +230,34 @@
         container.innerHTML += `
           <div style="display:inline-block; margin:0 5px;">
             <label for="${btnKey}">#${i}</label>
-            <input type="color" id="${btnKey}" name="${btnKey}" value="${color}" ${value === 'off' ? 'disabled' : ''}>
-            <input type="checkbox" id="${btnKey}_off" name="${btnKey}_off" ${checked} onchange="toggleButtonColor('${btnKey}')">
+            <input type="color" id="${btnKey}" name="${btnKey}" value="${color}">
+            <input type="checkbox" id="${btnKey}_off" name="${btnKey}_off" ${checked}>
             <label for="${btnKey}_off" class="off-label">off</label>
           </div>
         `;
       }
-    }
+      attachAutoSave(); // Re-attach after rendering
 
-    // Toggle color input enabled/disabled
-    window.toggleButtonColor = function(btnKey) {
-      const colorInput = document.getElementById(btnKey);
-      const offCheckbox = document.getElementById(btnKey + '_off');
-      colorInput.disabled = offCheckbox.checked;
-    };
+      // Add event listeners for color inputs to auto-uncheck "off"
+      for (let i = 0; i <= 9; i++) {
+        const btnKey = `button_${i}`;
+        const colorInput = document.getElementById(btnKey);
+        const offCheckbox = document.getElementById(btnKey + '_off');
+        colorInput.addEventListener('input', function() {
+          offCheckbox.checked = false;
+          autoSaveAndGenerate();
+        });
+        offCheckbox.addEventListener('change', function() {
+          autoSaveAndGenerate();
+        });
+      }
+    }
 
     // Fill form with data.json values
     async function fillForm() {
       const data = await loadJSON('data.json');
       document.getElementById('knob_down').value = data.knob_down || 1;
+      document.getElementById('zoomValue').textContent = data.knob_down || 1;
       document.getElementById('slider').value = data.slider || 0;
       document.getElementById('sliderValue').textContent = data.slider || 0;
       if (data.switch === 'left') document.getElementById('switch_left').checked = true;
@@ -258,14 +268,18 @@
       renderButtonInputs(data);
     }
 
+    // Update zoom slider value display
+    document.getElementById('knob_down').oninput = function() {
+      document.getElementById('zoomValue').textContent = this.value;
+    };
+
     // Update slider value display
     document.getElementById('slider').oninput = function() {
       document.getElementById('sliderValue').textContent = this.value;
     };
 
-    // Save form to data.json
-    document.getElementById('settingsForm').onsubmit = async function(e) {
-      e.preventDefault();
+    // Save form to data.json and generate new pattern
+    async function autoSaveAndGenerate() {
       const data = {};
       data.knob_down = parseInt(document.getElementById('knob_down').value);
       data.slider = parseInt(document.getElementById('slider').value);
@@ -279,8 +293,18 @@
         data[btnKey] = offCheckbox.checked ? 'off' : colorInput.value;
       }
       await postJSON('/data.json', data);
-      await drawPattern();
-    };
+      await fetch('/generate', {method: 'POST'});
+      setTimeout(drawPattern, 300);
+    }
+
+    // Attach auto-save to all inputs in the form
+    function attachAutoSave() {
+      const form = document.getElementById('settingsForm');
+      form.querySelectorAll('input').forEach(input => {
+        input.oninput = autoSaveAndGenerate;
+        input.onchange = autoSaveAndGenerate;
+      });
+    }
 
     // Drawing logic (unchanged)
     function resolveColor(c) {
@@ -352,6 +376,7 @@
     const settingsOverlay = document.getElementById('settingsOverlay');
     const showSettingsTab = document.getElementById('showSettingsTab');
     const closeSettingsBtn = document.getElementById('closeSettingsBtn');
+    const settingsPanel = document.getElementById('settingsPanel');
 
     showSettingsTab.onclick = function() {
       settingsOverlay.style.display = 'flex';
@@ -361,9 +386,16 @@
       settingsOverlay.style.display = 'none';
       showSettingsTab.style.display = 'flex';
     };
+    // Click outside panel closes overlay
+    settingsOverlay.onclick = function(e) {
+      if (e.target === settingsOverlay) {
+        settingsOverlay.style.display = 'none';
+        showSettingsTab.style.display = 'flex';
+      }
+    };
 
     // Initial load
-    fillForm();
+    fillForm().then(attachAutoSave);
     drawPattern();
   </script>
 </body>
