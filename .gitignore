@@ -1,5 +1,0 @@
-logs/
-*.log
-user_data/
-__pycache__/
-.env
