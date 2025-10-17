@@ -1,7 +1,11 @@
 services:
   - type: web
-    name: pepe-machine
+    name: pepe-pattern
     env: python
-    buildCommand: ""
-    startCommand: python server.py
-    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn server:app
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.9.0
+      - key: MAX_TIMEOUT
+        value: 120

@@ -3,23 +3,41 @@ import os
 import json
 import subprocess
 import uuid
+import logging
+from logging.handlers import RotatingFileHandler
 
 app = Flask(__name__, static_folder='.')
-app.secret_key = os.urandom(24)  # Required for sessions
+app.secret_key = os.environ.get('SECRET_KEY', os.urandom(24))
+
+# Configure logging
+if not os.path.exists('logs'):
+    os.makedirs('logs')
+
+formatter = logging.Formatter(
+    '[%(asctime)s] %(levelname)s in %(module)s: %(message)s'
+)
+
+file_handler = RotatingFileHandler(
+    'logs/app.log', 
+    maxBytes=10240, 
+    backupCount=10
+)
+file_handler.setFormatter(formatter)
+file_handler.setLevel(logging.INFO)
+
+app.logger.addHandler(file_handler)
+app.logger.setLevel(logging.INFO)
 
 def get_user_directory():
-    """Create and get user-specific directory"""
     if 'user_id' not in session:
         session['user_id'] = str(uuid.uuid4())
+        app.logger.info(f"Created new session: {session['user_id']}")
     
     user_dir = os.path.join('user_data', session['user_id'])
     if not os.path.exists(user_dir):
         os.makedirs(user_dir)
+        app.logger.info(f"Created user directory: {user_dir}")
     return user_dir
-
-def get_user_file(filename):
-    """Get path to user-specific file"""
-    return os.path.join(get_user_directory(), filename)
 
 @app.route('/')
 def index():
@@ -72,36 +90,39 @@ def data_json():
 
 @app.route('/generate', methods=['POST'])
 def generate():
-    # Copy user's data.json to the location PepesMachine.py expects
-    data_file = get_user_file('data.json')
-    pattern_file = get_user_file('pattern.json')
-    
-    # Create a temporary data.json for PepesMachine.py to read
-    temp_data = 'temp_data.json'
-    temp_pattern = 'temp_pattern.json'
-    
-    if os.path.exists(data_file):
-        with open(data_file, 'r') as src, open(temp_data, 'w') as dst:
-            dst.write(src.read())
-    
-    # Run PepesMachine.py with temporary files
-    subprocess.run(['python', 'PepesMachine.py'])
-    
-    # Move generated pattern to user's directory
-    if os.path.exists(temp_pattern):
-        with open(temp_pattern, 'r') as src, open(pattern_file, 'w') as dst:
-            dst.write(src.read())
-        os.remove(temp_pattern)
-    
-    if os.path.exists(temp_data):
-        os.remove(temp_data)
-    
-    return jsonify({"status": "ok"})
+    try:
+        user_dir = get_user_directory()
+        app.logger.info(f"Generating pattern for user: {session['user_id']}")
+        
+        # Set timeouts for subprocess
+        timeout = 30  # 30 seconds timeout
+        
+        # Run PepesMachine.py with timeout
+        process = subprocess.run(
+            ['python', 'PepesMachine.py'],
+            timeout=timeout,
+            capture_output=True
+        )
+        
+        if process.returncode != 0:
+            app.logger.error(f"Generation failed: {process.stderr.decode()}")
+            return jsonify({"error": "Pattern generation failed"}), 500
+            
+        app.logger.info("Pattern generated successfully")
+        return jsonify({"status": "ok"})
+        
+    except subprocess.TimeoutExpired:
+        app.logger.error("Pattern generation timed out")
+        return jsonify({"error": "Generation timed out"}), 504
+    except Exception as e:
+        app.logger.error(f"Error in generate: {str(e)}")
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
-    # Create user_data directory if it doesn't exist
-    if not os.path.exists('user_data'):
-        os.makedirs('user_data')
+    # Create necessary directories
+    for dir in ['user_data', 'logs']:
+        if not os.path.exists(dir):
+            os.makedirs(dir)
     
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
