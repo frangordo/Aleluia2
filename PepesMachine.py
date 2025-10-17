@@ -526,7 +526,8 @@ class PatternStyles:
 
 def get_canvas_dimensions():
     try:
-        with open("data.json", "r") as f:
+        # Change to read from temp file
+        with open("temp_data.json", "r") as f:
             data = json.load(f)
             altTela = int(data.get("canvas_height", 500))
             largTela = int(data.get("canvas_width", 500))
@@ -729,29 +730,29 @@ class StartPepeFunction:
 def draw_pepe():
     set_new_colors()
     StartPepeFunction()
+    
     # Collect all non-empty grid values
     pattern_data = []
     for i, col in enumerate(gridValues):
         for j, cell in enumerate(col):
             if cell:  # Only add non-empty cells
                 for entry in cell:
-                    # Optionally, add grid coordinates to each entry
+                    # Add grid coordinates to each entry
                     entry_with_coords = dict(entry)
                     entry_with_coords["grid_x"] = i
                     entry_with_coords["grid_y"] = j
                     pattern_data.append(entry_with_coords)
-    # Write to pattern.json (overwrite if exists)
-    with open("pattern.json", "w") as f:
+    
+    # Get output path from environment variable or use default
+    temp_pattern_path = os.environ.get('TEMP_PATTERN_PATH', 'temp_pattern.json')
+    
+    # Write to pattern file
+    with open(temp_pattern_path, "w") as f:
         json.dump(pattern_data, f, indent=2)
 
-global gridValues
-gridValues = {}
-draw_pepe()
+# Initialize gridValues globally
+global gridValues 
+gridValues = [[[] for _ in range(100)] for _ in range(100)]  # Adjust size as needed
 
-# Print all non-empty grid values in a readable way
-#for i, col in enumerate(gridValues):
-#    for j, cell in enumerate(col):
-#        if cell:  # Only print non-empty cells
-#            print(f"gridValues[{i}][{j}]:")
-#            for entry in cell:
-#                print(entry)
+# Call draw_pepe() at the end
+draw_pepe()
