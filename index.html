@@ -208,9 +208,23 @@
     </div>
   </div>
   <script>
+    // Persist session id via localStorage (survives browser restarts).
+    // We still set a cookie from localStorage so fetch requests include it.
+    function ensureSessionId() {
+      let sid = localStorage.getItem('session_id');
+      if (!sid) {
+        sid = (crypto && crypto.randomUUID) ? crypto.randomUUID() : ('s' + Date.now() + '-' + Math.random().toString(36).slice(2,10));
+        localStorage.setItem('session_id', sid);
+      }
+      // Mirror into a cookie so server request handlers can read it
+      // Cookie is intentionally session-length (no expires) but is overwritten on load from localStorage.
+      document.cookie = 'session_id=' + encodeURIComponent(sid) + '; path=/';
+    }
+    ensureSessionId();
+
     // Helper to load JSON
     async function loadJSON(url) {
-      const resp = await fetch(url);
+      const resp = await fetch(url, { credentials: 'same-origin' });
       return await resp.json();
     }
 
@@ -219,7 +233,8 @@
       await fetch(url, {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify(data)
+        body: JSON.stringify(data),
+        credentials: 'same-origin'
       });
     }
 
@@ -453,7 +468,8 @@
 
     // On new generation, always append to end of history (never erase forward)
     async function generateAndSaveHistory() {
-      await fetch('/generate', {method: 'POST'});
+      // POST to /generate must include credentials so cookie (mirrored from localStorage) is sent
+      await fetch('/generate', { method: 'POST', credentials: 'same-origin' });
       setTimeout(async () => {
         const pattern = await fetchCurrentPattern();
         // Always append new pattern to end of history
@@ -530,6 +546,8 @@
     };
 
     // Initial load
+    // Ensure session cookie mirrors localStorage on every load before requests start
+    ensureSessionId();
     fillForm().then(attachAutoSave);
     loadHistory();
     // If history exists, draw last pattern, else draw current

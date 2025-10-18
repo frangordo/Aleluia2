@@ -1,6 +1,18 @@
 import random
 import json
 import os
+import sys
+
+REQUEST_SETTINGS = None
+
+# Determine session id from environment or argv (subprocess mode)
+SESSION_ID = os.environ.get('SESSION_ID') if os.environ.get('SESSION_ID') else (sys.argv[1] if len(sys.argv) > 1 else None)
+BASE_DIR = os.path.dirname(__file__)
+USER_DATA_DIR = os.path.join(BASE_DIR, 'user_data')
+os.makedirs(USER_DATA_DIR, exist_ok=True)
+DATA_FILE = os.path.join(USER_DATA_DIR, f"data_{SESSION_ID}.json") if SESSION_ID else os.path.join(BASE_DIR, "data.json")
+PATTERN_FILE = os.path.join(USER_DATA_DIR, f"pattern_{SESSION_ID}.json") if SESSION_ID else os.path.join(BASE_DIR, "pattern.json")
+
 
 def draw0(self,x,y,xdist,ydist):
     # print("Tile = Padrão Triangulos || rotation angle = 0, || Coordenates :",x+xdist+1,y+ydist+1,"|| color_fundo:",self.CorFundo, "color_padrão:",self.CorPattern)
@@ -526,25 +538,40 @@ class PatternStyles:
 
 def get_canvas_dimensions():
     try:
-        with open("data.json", "r") as f:
-            data = json.load(f)
+        if REQUEST_SETTINGS:
+            data = REQUEST_SETTINGS
             altTela = int(data.get("canvas_height", 500))
             largTela = int(data.get("canvas_width", 500))
             altTela = max(100, min(2000, altTela))
             largTela = max(100, min(2000, largTela))
+        else:
+            with open(DATA_FILE, "r") as f:
+                data = json.load(f)
+                altTela = int(data.get("canvas_height", 500))
+                largTela = int(data.get("canvas_width", 500))
+                altTela = max(100, min(2000, altTela))
+                largTela = max(100, min(2000, largTela))
     except (FileNotFoundError, ValueError, json.JSONDecodeError):
         altTela = 500
         largTela = 500
     canvas_dividend = 50
     divLarg = int((largTela/canvas_dividend)/2)
-    divAlt = int((altTela/canvas_dividend)/2) 
-    return altTela,largTela,divAlt,divLarg
+    divAlt = int((altTela/canvas_dividend)/2)
+    return altTela, largTela, divAlt, divLarg
+
 
 def get_final_pepecolors():
     FinalPepeColors = {}
     All_Colors = []
-    with open("data.json", "r") as f:
-        data = json.load(f)
+    try:
+        if REQUEST_SETTINGS:
+            data = REQUEST_SETTINGS
+        else:
+            with open(DATA_FILE, "r") as f:
+                data = json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        data = {}
+
     for key, value in data.items():
         if key.startswith("button_") and value != "off":
             All_Colors.append(value)
@@ -556,9 +583,10 @@ def get_final_pepecolors():
     for index, color in enumerate(selected_colors):
         FinalPepeColors[index] = color
     if len(FinalPepeColors) < 2:
-        additional_color = choice(["black", "white"])
+        additional_color = random.choice(["black", "white"])
         FinalPepeColors[len(FinalPepeColors)] = additional_color
     return FinalPepeColors
+
 
 canIgoback = False
 canIgobackintoFuture = False
@@ -573,12 +601,15 @@ FinalPepeColors = get_final_pepecolors()
 base_RandomNum = [1, 2]
 def get_knob_value():
     try:
-        with open("data.json", "r") as f:
+        if REQUEST_SETTINGS:
+            return int(REQUEST_SETTINGS.get("knob_down", 0))
+        with open(DATA_FILE, "r") as f:
             data = json.load(f)
             return int(data.get("knob_down", 0))
     except (FileNotFoundError, ValueError, json.JSONDecodeError):
         return 0
     return 0
+
 
 def set_new_colors():
     global FinalPepeColors
@@ -601,32 +632,32 @@ class PepeAI:
             self.colorFundo = random.choice(self.pepeCores)
     def GetPatternShape(self):
         try:
-            with open("data.json", "r") as f:
-                data = json.load(f)
+            if REQUEST_SETTINGS:
+                data = REQUEST_SETTINGS
                 switch_value = data.get("switch", None)
-                if switch_value == "left":
-                    self.ShapeComand = "aleluia_quadrados"
-                elif switch_value == "right":
-                    self.ShapeComand = "aleluia_triangulos"
-                elif switch_value == "center":
+                slider_value = int(data.get("slider", 50))
+            else:
+                with open(DATA_FILE, "r") as f:
+                    data = json.load(f)
+                    switch_value = data.get("switch", None)
                     slider_value = int(data.get("slider", 50))
-                    if slider_value <= 50:
-                        prob_aleluia_quadrados = 0.9 - (slider_value / 50) * 0.4
-                        prob_aleluia = 1 - prob_aleluia_quadrados
-                    else:
-                        prob_aleluia = 0.9 - ((slider_value - 50) / 50) * 0.4
-                        prob_aleluia_quadrados = 1 - prob_aleluia
-                    self.ShapeComand = random.choice([
-                        "aleluia_triangulos", "aleluia_quadrados"
-                    ]) if random.randint(0, 1) == 0 else random.choice([
-                        "aleluia_triangulos", "aleluia_quadrados"
-                    ])
+            if switch_value == "left":
+                self.ShapeComand = "aleluia_quadrados"
+            elif switch_value == "right":
+                self.ShapeComand = "aleluia_triangulos"
+            elif switch_value == "center":
+                # Keep it simple: random choice weighted by slider (original code had an unclear block)
+                if slider_value <= 50:
+                    # bias toward squares
+                    self.ShapeComand = random.choice(["aleluia_quadrados", "aleluia_triangulos"])
                 else:
-                    self.ShapeComand = random.choice(("aleluia_triangulos", "aleluia_quadrados"))
-                return
-        except (FileNotFoundError, json.JSONDecodeError):
+                    self.ShapeComand = random.choice(["aleluia_triangulos", "aleluia_quadrados"])
+            else:
+                self.ShapeComand = random.choice(("aleluia_triangulos", "aleluia_quadrados"))
+            return
+        except (FileNotFoundError, json.JSONDecodeError, ValueError):
             self.ShapeComand = random.choice(("aleluia_triangulos", "aleluia_quadrados"))
-        self.ShapeComand = random.choice(("aleluia_triangulos", "aleluia_quadrados"))
+
 
 class PepeDrawer:
     def __init__(self,CorFundo,CorPattern,PepeQuad1,PepeQuad2,ShapeComand):
@@ -726,7 +757,7 @@ class StartPepeFunction:
                 ADN.append((NewPepe.colorFundo,NewPepe.colorPattern,(self.Xpoints[a-1],y),(self.Xpoints[a],y+NewNum),newPepitos.ShapeComand))
                 y = y + NewNum
 
-def draw_pepe():
+def draw_pepe(write_to_file=True):
     set_new_colors()
     StartPepeFunction()
     # Collect all non-empty grid values
@@ -735,18 +766,51 @@ def draw_pepe():
         for j, cell in enumerate(col):
             if cell:  # Only add non-empty cells
                 for entry in cell:
-                    # Optionally, add grid coordinates to each entry
                     entry_with_coords = dict(entry)
                     entry_with_coords["grid_x"] = i
                     entry_with_coords["grid_y"] = j
+                    # Remove 'coordinates' tuple to avoid duplication (optional)
+                    if "coordinates" in entry_with_coords:
+                        del entry_with_coords["coordinates"]
                     pattern_data.append(entry_with_coords)
-    # Write to pattern.json (overwrite if exists)
-    with open("pattern.json", "w") as f:
-        json.dump(pattern_data, f, indent=2)
+    if write_to_file:
+        # Ensure user_data directory exists (should already)
+        os.makedirs(os.path.dirname(PATTERN_FILE), exist_ok=True)
+        with open(PATTERN_FILE, "w") as f:
+            json.dump(pattern_data, f, indent=2)
+        return None
+    else:
+         # Return the pattern data to caller (in-memory)
+         return pattern_data
 
-global gridValues
-gridValues = {}
-draw_pepe()
+
+def generate(settings=None):
+    """
+    Minimal adapter for Flask:
+      - settings: dict (same structure previously stored in data.json)
+      - returns: pattern_data (list of tile dicts)
+    """
+    global REQUEST_SETTINGS, gridValues, Filletes, ADN, FinalPepeColors, canIgoback, canIgobackintoFuture, gofoward, isdrawn
+    # Reset any global state we reuse
+    REQUEST_SETTINGS = settings or {}
+    Filletes = []
+    ADN = []
+    set_new_colors()
+    # Ensure gridValues exists and is cleared by StartPepeFunction, but set to empty here
+    gridValues = {}
+    # Run generator but ask it to return data instead of writing files
+    pattern = draw_pepe(write_to_file=False)
+    # Clean up / reset REQUEST_SETTINGS to avoid bleed
+    REQUEST_SETTINGS = None
+    return pattern
+
+if __name__ == '__main__':
+    # When run as a script, produce files for backward compatibility
+    global gridValues
+    gridValues = {}
+    # If the script is invoked directly as a subprocess, write per-session pattern file as configured above
+    draw_pepe(write_to_file=True)
+
 
 # Print all non-empty grid values in a readable way
 #for i, col in enumerate(gridValues):
