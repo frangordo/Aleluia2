@@ -407,30 +407,40 @@
       const hist = localStorage.getItem('patternHistory');
       if (hist) {
         patternHistory = JSON.parse(hist);
+        // support legacy entries that were only arrays
+        patternHistory = patternHistory.map(e => {
+          if (Array.isArray(e)) return { pattern: e, data: null };
+          return e;
+        });
         historyIndex = parseInt(localStorage.getItem('historyIndex')) || (patternHistory.length - 1);
       }
       updateHistoryButtons();
     }
-
+    
     function saveHistory() {
       localStorage.setItem('patternHistory', JSON.stringify(patternHistory));
       localStorage.setItem('historyIndex', historyIndex);
       updateHistoryButtons();
     }
-
+    
     function updateHistoryButtons() {
       document.getElementById('backBtn').disabled = historyIndex <= 0;
       document.getElementById('forwardBtn').disabled = historyIndex >= patternHistory.length - 1;
     }
-
+    
     async function fetchCurrentPattern() {
       return await loadJSON('pattern.json');
     }
-
+    
     async function drawPatternFromHistory(idx) {
       if (patternHistory[idx]) {
-        const pattern = patternHistory[idx];
-        const data = await loadJSON('data.json');
+        const entry = patternHistory[idx];
+        const pattern = entry.pattern || entry; // support legacy
+        // prefer saved data that matches this pattern; fallback to current data.json
+        let data = entry.data;
+        if (!data) {
+          data = await loadJSON('data.json');
+        }
         const canvas = document.getElementById('patternCanvas');
         const width = data.canvas_width || 500;
         const height = data.canvas_height || 500;
@@ -465,24 +475,25 @@
       }
       updateHistoryButtons();
     }
-
-    // On new generation, always append to end of history (never erase forward)
-    async function generateAndSaveHistory() {
-      // POST to /generate must include credentials so cookie (mirrored from localStorage) is sent
-      await fetch('/generate', { method: 'POST', credentials: 'same-origin' });
-      setTimeout(async () => {
-        const pattern = await fetchCurrentPattern();
-        // Always append new pattern to end of history
-        patternHistory.push(pattern);
-        // Limit history to 100 generations
-        if (patternHistory.length > 100) {
-          patternHistory = patternHistory.slice(patternHistory.length - 100);
-        }
-        historyIndex = patternHistory.length - 1;
-        saveHistory();
-        drawPatternFromHistory(historyIndex);
-      }, 300);
-    }
+ 
+     // On new generation, always append to end of history (never erase forward)
+     async function generateAndSaveHistory() {
+       // POST to /generate must include credentials so cookie (mirrored from localStorage) is sent
+       await fetch('/generate', { method: 'POST', credentials: 'same-origin' });
+       setTimeout(async () => {
+         const pattern = await fetchCurrentPattern();
+         const data = await loadJSON('data.json'); // capture the data that produced this pattern
+         // Always append new pattern+data to end of history
+         patternHistory.push({ pattern: pattern, data: data });
+         // Limit history to 100 generations
+         if (patternHistory.length > 100) {
+           patternHistory = patternHistory.slice(patternHistory.length - 100);
+         }
+         historyIndex = patternHistory.length - 1;
+         saveHistory();
+         drawPatternFromHistory(historyIndex);
+       }, 300);
+     }
 
     document.getElementById('generateBtn').onclick = generateAndSaveHistory;
 
@@ -571,8 +582,10 @@
 
     // Print button logic
     document.getElementById('printBtn').onclick = function() {
-      let pattern = patternHistory[historyIndex];
-      if (!pattern) return;
+      const entry = patternHistory[historyIndex];
+      if (!entry) return;
+      // entry may be { pattern, data } or legacy pattern array
+      const pattern = entry.pattern || entry;
       const instructions = getDrawingInstructions(pattern);
       const blob = new Blob([instructions], { type: 'text/plain' });
       const url = URL.createObjectURL(blob);
