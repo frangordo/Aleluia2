@@ -542,15 +542,15 @@ def get_canvas_dimensions():
             data = REQUEST_SETTINGS
             altTela = int(data.get("canvas_height", 500))
             largTela = int(data.get("canvas_width", 500))
-            altTela = max(100, min(2000, altTela))
-            largTela = max(100, min(2000, largTela))
+            altTela = max(100, min(1000000, altTela))
+            largTela = max(100, min(1000000, largTela))
         else:
             with open(DATA_FILE, "r") as f:
                 data = json.load(f)
                 altTela = int(data.get("canvas_height", 500))
                 largTela = int(data.get("canvas_width", 500))
-                altTela = max(100, min(2000, altTela))
-                largTela = max(100, min(2000, largTela))
+                altTela = max(100, min(1000000, altTela))
+                largTela = max(100, min(1000000, largTela))
     except (FileNotFoundError, ValueError, json.JSONDecodeError):
         altTela = 500
         largTela = 500
