@@ -5,6 +5,22 @@
   <title>Pepe Pattern Viewer</title>
   <style>
     body { background: #222; color: #eee; margin: 0; padding: 0; }
+    /* swatch styles for color icons (active/inactive) */
+    .swatch {
+      width: 30px;
+      height: 30px;
+      border-radius: 6px;
+      border: 2px solid #666;
+      display: inline-block;
+      cursor: pointer;
+      vertical-align: middle;
+      box-sizing: border-box;
+    }
+    .swatch.inactive {
+      background: repeating-linear-gradient(45deg,#ddd,#ddd 6px,#fff 6px,#fff 12px);
+      opacity: 0.8;
+      border-color: #444;
+    }
     #mainCanvasContainer {
       display: flex;
       flex-direction: column;
@@ -208,6 +224,12 @@
     </div>
   </div>
   <script>
+    // Default button colors (will be used as fallback and initial palette)
+    const DEFAULT_BUTTON_COLORS = [
+      "#ff66de","#f98686","#7081ff","#62fe74","#fcff4d",
+      "#ff7b24","#bd7ef1","#ffffff","#007EA7","#3517ab"
+    ];
+
     // Persist session id via localStorage (survives browser restarts).
     // We still set a cookie from localStorage so fetch requests include it.
     function ensureSessionId() {
@@ -239,43 +261,63 @@
     }
 
     // Dynamically create button color/off inputs
+    // `data` may be legacy format (string) or normalized objects { state: "on"|"off", color: "#hex" }.
     function renderButtonInputs(data) {
       const container = document.getElementById('buttonInputs');
       container.innerHTML = '';
       for (let i = 0; i <= 9; i++) {
         const btnKey = `button_${i}`;
-        const value = data[btnKey] || 'off';
-        const color = (value !== 'off') ? value : '#ffffff';
-        const checked = (value === 'off') ? 'checked' : '';
+        // Normalize incoming value into object with { state, color }
+        let value = data[btnKey];
+        let state = "off";
+        let color = DEFAULT_BUTTON_COLORS[i];
+        if (typeof value === "string") {
+          if (value !== "off") {
+            state = "on";
+            color = value;
+          } else {
+            state = "off";
+          }
+        } else if (value && typeof value === "object") {
+          state = value.state === "on" ? "on" : "off";
+          color = value.color || DEFAULT_BUTTON_COLORS[i];
+        }
+        const inactive = (state === 'off');
+        // store color in data-color so we preserve it even while off
         container.innerHTML += `
-          <div style="display:inline-block; margin:0 5px;">
-            <label for="${btnKey}">#${i}</label>
-            <input type="color" id="${btnKey}" name="${btnKey}" value="${color}">
-            <input type="checkbox" id="${btnKey}_off" name="${btnKey}_off" ${checked}>
-            <label for="${btnKey}_off" class="off-label">off</label>
+          <div style="display:inline-block; margin:0 6px; text-align:center;">
+            <div id="${btnKey}_swatch" class="swatch ${inactive ? 'inactive' : ''}" title="Click to toggle on/off"
+                 data-color="${color}" style="${inactive ? '' : 'background:' + color}">
+            </div>
           </div>
         `;
       }
-      attachAutoSave(); // Re-attach after rendering
 
-      // Add event listeners for color inputs to auto-uncheck "off"
+      // Add event listeners: left-click -> toggle active/inactive
       for (let i = 0; i <= 9; i++) {
         const btnKey = `button_${i}`;
-        const colorInput = document.getElementById(btnKey);
-        const offCheckbox = document.getElementById(btnKey + '_off');
-        colorInput.addEventListener('input', function() {
-          offCheckbox.checked = false;
-          autoSaveAndGenerate();
-        });
-        offCheckbox.addEventListener('change', function() {
+        const swatch = document.getElementById(btnKey + '_swatch');
+        if (!swatch) continue;
+        swatch.addEventListener('click', function(e) {
+          // Toggle on/off
+          swatch.classList.toggle('inactive');
+          // If activated and no explicit background, apply stored color
+          if (!swatch.classList.contains('inactive')) {
+            swatch.style.background = swatch.dataset.color || '#ffffff';
+          } else {
+            // clear background when turned off to show the hatch pattern
+            swatch.style.background = '';
+          }
           autoSaveAndGenerate();
         });
       }
     }
 
-    // Fill form with data.json values
+    // Fill form with data.json values. Normalize legacy button fields to {state,color} and persist back.
     async function fillForm() {
-      const data = await loadJSON('data.json');
+      const raw = await loadJSON('data.json');
+      const data = Object.assign({}, raw || {});
+      // Ensure knob/slider/switch/canvas fields exist
       document.getElementById('knob_down').value = data.knob_down || 1;
       document.getElementById('zoomValue').textContent = data.knob_down || 1;
       document.getElementById('slider').value = data.slider || 0;
@@ -285,7 +327,42 @@
       else document.getElementById('switch_center').checked = true;
       document.getElementById('canvas_width').value = data.canvas_width || 500;
       document.getElementById('canvas_height').value = data.canvas_height || 500;
+
+      // Normalize button fields into objects { state, color } so colors are never lost.
+      let normalized = false;
+      for (let i = 0; i <= 9; i++) {
+        const key = `button_${i}`;
+        const val = data[key];
+        if (typeof val === "string") {
+          // legacy: either color or "off"
+          if (val === "off") {
+            data[key] = { state: "off", color: DEFAULT_BUTTON_COLORS[i] };
+          } else {
+            data[key] = { state: "on", color: val };
+          }
+          normalized = true;
+        } else if (!val || typeof val !== "object") {
+          // missing -> initialize default as on with default color
+          data[key] = { state: "on", color: DEFAULT_BUTTON_COLORS[i] };
+          normalized = true;
+        } else {
+          // object: ensure fallback color exists
+          data[key].color = data[key].color || DEFAULT_BUTTON_COLORS[i];
+        }
+      }
+
+      // Render UI with normalized data
       renderButtonInputs(data);
+
+      // If we changed structure, persist normalized data back without triggering immediate generation
+      if (normalized) {
+        try {
+          await postJSON('/data.json', data);
+        } catch (e) {
+          // ignore save error; UI still usable
+          console.warn('Failed to persist normalized data', e);
+        }
+      }
     }
 
     // Update zoom slider value display
@@ -298,7 +375,8 @@
       document.getElementById('sliderValue').textContent = this.value;
     };
 
-    // Save form to data.json and generate new pattern
+    // Save form to data.json and generate new pattern (immediate)
+    // Now stores button fields as objects { state: "on"|"off", color: "#hex" } so color is preserved even while off.
     async function autoSaveAndGenerate() {
       const data = {};
       data.knob_down = parseInt(document.getElementById('knob_down').value);
@@ -308,9 +386,10 @@
       data.canvas_height = parseInt(document.getElementById('canvas_height').value);
       for (let i = 0; i <= 9; i++) {
         const btnKey = `button_${i}`;
-        const colorInput = document.getElementById(btnKey);
-        const offCheckbox = document.getElementById(btnKey + '_off');
-        data[btnKey] = offCheckbox.checked ? 'off' : colorInput.value;
+        const swatch = document.getElementById(btnKey + '_swatch');
+        const color = (swatch && swatch.dataset && swatch.dataset.color) ? swatch.dataset.color : DEFAULT_BUTTON_COLORS[i];
+        const state = (swatch && !swatch.classList.contains('inactive')) ? "on" : "off";
+        data[btnKey] = { state: state, color: color };
       }
       await postJSON('/data.json', data);
       await generateAndSaveHistory();
@@ -523,9 +602,10 @@
       data.canvas_height = parseInt(document.getElementById('canvas_height').value);
       for (let i = 0; i <= 9; i++) {
         const btnKey = `button_${i}`;
-        const colorInput = document.getElementById(btnKey);
-        const offCheckbox = document.getElementById(btnKey + '_off');
-        data[btnKey] = offCheckbox.checked ? 'off' : colorInput.value;
+        const swatch = document.getElementById(btnKey + '_swatch');
+        const color = (swatch && swatch.dataset && swatch.dataset.color) ? swatch.dataset.color : DEFAULT_BUTTON_COLORS[i];
+        const state = (swatch && !swatch.classList.contains('inactive')) ? "on" : "off";
+        data[btnKey] = { state: state, color: color };
       }
       await postJSON('/data.json', data);
 

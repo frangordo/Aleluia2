@@ -572,9 +572,21 @@ def get_final_pepecolors():
     except (FileNotFoundError, json.JSONDecodeError):
         data = {}
 
+    # Support both legacy string format ("#hex" or "off") and new object format:
+    # button_n: { state: "on"|"off", color: "#hex" }
     for key, value in data.items():
-        if key.startswith("button_") and value != "off":
-            All_Colors.append(value)
+        if not key.startswith("button_"):
+            continue
+        # new object format
+        if isinstance(value, dict):
+            state = value.get("state")
+            color = value.get("color")
+            if state == "on" and color:
+                All_Colors.append(color)
+        else:
+            # legacy string format
+            if isinstance(value, str) and value != "off":
+                All_Colors.append(value)
     if not All_Colors:
         FinalPepeColors[0] = "black"
         FinalPepeColors[1] = "white"
