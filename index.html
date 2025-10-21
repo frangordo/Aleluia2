@@ -446,6 +446,27 @@
 
     const TILE_MARGIN_RATIO = 0.008; // 8% of tile size as margin
 
+    // Helper: detect max safe canvas dimension (uses WebGL MAX_TEXTURE_SIZE) and ensure requested canvas fits
+    function getMaxCanvasSize() {
+      try {
+        const probe = document.createElement('canvas');
+        const gl = probe.getContext('webgl') || probe.getContext('experimental-webgl');
+        if (!gl) return 4096;
+        const max = gl.getParameter(gl.MAX_TEXTURE_SIZE);
+        return (typeof max === 'number' && max > 0) ? max : 4096;
+      } catch (e) {
+        return 4096;
+      }
+    }
+    function ensureCanvasSizeWithinLimits(reqW, reqH) {
+      const maxDim = getMaxCanvasSize();
+      if (reqW <= maxDim && reqH <= maxDim) return { width: reqW, height: reqH, scale: 1 };
+      const scale = Math.min(maxDim / reqW, maxDim / reqH);
+      const newW = Math.max(1, Math.floor(reqW * scale));
+      const newH = Math.max(1, Math.floor(reqH * scale));
+      return { width: newW, height: newH, scale: scale };
+    }
+
     // Helper: keep large intrinsic canvas but scale the displayed size to fit the screen
     function applyCanvasDisplaySize(canvas, intrinsicW, intrinsicH) {
       // how much of the viewport we allow the canvas to use
@@ -467,10 +488,16 @@
       const width = data.canvas_width || 500;
       const height = data.canvas_height || 500;
 
-      // set the actual drawing buffer to the requested canvas size (keeps exports/prints high-res)
-      canvas.width = width;
-      canvas.height = height;
-      // but scale the displayed size so it always fits the viewport
+      // Ensure backing buffer fits browser/GPU limits. If needed downscale internal buffer but keep
+      // the original requested intrinsic size for display (CSS) so UI remains consistent.
+      const adjusted = ensureCanvasSizeWithinLimits(width, height);
+      if (adjusted.scale !== 1) {
+        console.warn('Requested canvas size exceeds browser limits; drawing buffer downscaled by', adjusted.scale.toFixed(3));
+      }
+      // set the actual drawing buffer (may be downscaled)
+      canvas.width = adjusted.width;
+      canvas.height = adjusted.height;
+      // apply display size using original requested intrinsic size so the canvas appears at expected dimensions
       applyCanvasDisplaySize(canvas, width, height);
 
       let maxX = 0, maxY = 0;
@@ -478,6 +505,9 @@
         if (tile.grid_x > maxX) maxX = tile.grid_x;
         if (tile.grid_y > maxY) maxY = tile.grid_y;
       });
+      // When backing buffer was downscaled, we must scale drawing coordinates to match.
+      const drawScaleX = adjusted.width / width;
+      const drawScaleY = adjusted.height / height;
       const cols = Math.max(1, maxX);
       const rows = Math.max(1, maxY);
       const tileSize = Math.min(width / cols, height / rows);
@@ -491,12 +521,16 @@
 
       // Fill background with white for margins
       ctx.fillStyle = "#fff";
-      ctx.fillRect(0, 0, width, height);
+      ctx.fillRect(0, 0, adjusted.width, adjusted.height);
 
       pattern.forEach(tile => {
-        const x = offsetX + (tile.grid_x - 1) * tileSize + margin / 2;
-        const y = offsetY + (tile.grid_y - 1) * tileSize + margin / 2;
-        drawTile(ctx, tile, x, y, drawSize);
+        // map display coordinates into backing-buffer coordinates if downscaled
+        const x_disp = offsetX + (tile.grid_x - 1) * tileSize + margin / 2;
+        const y_disp = offsetY + (tile.grid_y - 1) * tileSize + margin / 2;
+        const x = x_disp * drawScaleX;
+        const y = y_disp * drawScaleY;
+        const size = drawSize * Math.min(drawScaleX, drawScaleY);
+        drawTile(ctx, tile, x, y, size);
       });
     }
 
@@ -524,8 +558,57 @@
     }
     
     function saveHistory() {
-      localStorage.setItem('patternHistory', JSON.stringify(patternHistory));
-      localStorage.setItem('historyIndex', historyIndex);
+      // helper to identify quota errors across browsers
+      function isQuotaExceeded(err) {
+        if (!err) return false;
+        return err.name === 'QuotaExceededError' || err.name === 'NS_ERROR_DOM_QUOTA_REACHED' ||
+               err.code === 22 || err.code === 1014;
+      }
+
+      // Try to persist; on quota error evict oldest entries until it fits.
+      try {
+        localStorage.setItem('patternHistory', JSON.stringify(patternHistory));
+      } catch (e) {
+        if (isQuotaExceeded(e)) {
+          // Keep removing oldest entries until it fits (or until only current entry left)
+          // Note: we attempt to preserve the most recent history at the end of the array.
+          while (patternHistory.length > 1) {
+            patternHistory.shift(); // evict oldest
+            try {
+              localStorage.setItem('patternHistory', JSON.stringify(patternHistory));
+              break; // saved successfully
+            } catch (err) {
+              if (!isQuotaExceeded(err)) {
+                // unknown error, rethrow
+                throw err;
+              }
+              // still quota exceeded -> continue evicting
+            }
+          }
+          // If we still can't save (very large single entry), fall back to empty history
+          if (patternHistory.length <= 1) {
+            try {
+              localStorage.setItem('patternHistory', JSON.stringify([]));
+              historyIndex = -1;
+            } catch (err) {
+              // give up silently; nothing more we can do in localStorage
+              console.warn('saveHistory: unable to persist even minimal history', err);
+            }
+          }
+        } else {
+          // not a quota problem -> rethrow so it surfaces
+          throw e;
+        }
+      }
+
+      // Try to persist historyIndex (best-effort)
+      try {
+        localStorage.setItem('historyIndex', historyIndex);
+      } catch (e) {
+        // ignore failures here (historyIndex is small)
+        console.warn('saveHistory: failed to save historyIndex', e);
+      }
+
       updateHistoryButtons();
     }
     
@@ -551,39 +634,48 @@
         const width = data.canvas_width || 500;
         const height = data.canvas_height || 500;
 
-        // set drawing buffer to saved/intrinsic size, then scale display
-        canvas.width = width;
-        canvas.height = height;
+        const adjusted = ensureCanvasSizeWithinLimits(width, height);
+        if (adjusted.scale !== 1) {
+          console.warn('Requested canvas size exceeds browser limits; drawing buffer downscaled by', adjusted.scale.toFixed(3));
+        }
+        canvas.width = adjusted.width;
+        canvas.height = adjusted.height;
         applyCanvasDisplaySize(canvas, width, height);
 
+        const drawScaleX = adjusted.width / width;
+        const drawScaleY = adjusted.height / height;
         let maxX = 0, maxY = 0;
-        pattern.forEach(tile => {
-          if (tile.grid_x > maxX) maxX = tile.grid_x;
-          if (tile.grid_y > maxY) maxY = tile.grid_y;
-        });
-        const cols = Math.max(1, maxX);
-        const rows = Math.max(1, maxY);
-        const tileSize = Math.min(width / cols, height / rows);
-        const margin = tileSize * TILE_MARGIN_RATIO;
-        const drawSize = tileSize - margin;
-        const offsetX = (width - tileSize * cols) / 2;
-        const offsetY = (height - tileSize * rows) / 2;
+         pattern.forEach(tile => {
+           if (tile.grid_x > maxX) maxX = tile.grid_x;
+           if (tile.grid_y > maxY) maxY = tile.grid_y;
+         });
+         const cols = Math.max(1, maxX);
+         const rows = Math.max(1, maxY);
+         const tileSize = Math.min(width / cols, height / rows);
+         const margin = tileSize * TILE_MARGIN_RATIO;
+         const drawSize = tileSize - margin;
+         const offsetX = (width - tileSize * cols) / 2;
+         const offsetY = (height - tileSize * rows) / 2;
+ 
+         const ctx = canvas.getContext('2d');
 
-        const ctx = canvas.getContext('2d');
-        ctx.clearRect(0, 0, width, height);
-
-        // Fill background with white for margins
-        ctx.fillStyle = "#fff";
-        ctx.fillRect(0, 0, width, height);
-
-        pattern.forEach(tile => {
-          const x = offsetX + (tile.grid_x - 1) * tileSize + margin / 2;
-          const y = offsetY + (tile.grid_y - 1) * tileSize + margin / 2;
-          drawTile(ctx, tile, x, y, drawSize);
-        });
-      }
-      updateHistoryButtons();
-    }
+         ctx.clearRect(0, 0, adjusted.width, adjusted.height);
+ 
+         // Fill background with white for margins
+         ctx.fillStyle = "#fff";
+         ctx.fillRect(0, 0, adjusted.width, adjusted.height);
+ 
+         pattern.forEach(tile => {
+           const x_disp = offsetX + (tile.grid_x - 1) * tileSize + margin / 2;
+           const y_disp = offsetY + (tile.grid_y - 1) * tileSize + margin / 2;
+           const x = x_disp * drawScaleX;
+           const y = y_disp * drawScaleY;
+           const size = drawSize * Math.min(drawScaleX, drawScaleY);
+           drawTile(ctx, tile, x, y, size);
+         });
+       }
+       updateHistoryButtons();
+     }
  
      // On new generation, always append to end of history (never erase forward)
      async function generateAndSaveHistory() {
