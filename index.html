@@ -176,13 +176,36 @@
       .form-section label { min-width: 80px; font-size: 0.95em; }
       #showSettingsTab { font-size: 1em; padding: 10px 18px 10px 8px; }
     }
+    /* Potentiometer styles (fixed on right) */
+    #potentiometer {
+      position: fixed;
+      right: 18px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 96px;
+      height: 96px;
+      z-index: 200;
+      cursor: pointer;
+      user-select: none;
+      touch-action: none;
+    }
+    #potentiometer img { position: absolute; left: 0; top: 0; width: 100%; height: 100%; pointer-events: none; }
+  #potentiometer #pot_front { transform-origin: 50% 50%; transition: transform 120ms linear; transform: translate(25%,25%) scale(0.5); }
+    /* Hide the settings knob input visually but keep it in the DOM for accessibility */
+    #settingsForm input[type="range"]#knob_down { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
   </style>
 </head>
 <body>
-  <div id="mainCanvasContainer">
+    <div id="mainCanvasContainer">
   <!-- Replaced textual title with logo image from static/Nome.png -->
   <!-- Logo image served from ./static/Nome.png -> available at /static/Nome.png -->
   <img id="logo" src="/static/Nome.png" alt="PEPESMACHINE" style="max-width:60vw; height:auto; display:block; margin:18px auto;">
+  <!-- Potentiometer control (fixed on right) -->
+  <div id="potentiometer" aria-hidden="false" title="Zoom">
+    <img id="pot_back" src="/static/button_zoom_back.png" alt="pot-back">
+    <img id="pot_front" src="/static/button_zoom_front.png" alt="pot-front">
+    <div id="pot_value" aria-hidden="true" style="display:none"></div>
+  </div>
     <canvas id="patternCanvas"></canvas>
     <button id="generateBtn">Generate New Pattern</button>
     <div style="margin-top:10px;">
@@ -811,6 +834,144 @@
       const ih = parseInt(canvas.dataset.intrinsicHeight || 0, 10);
       if (iw && ih) applyCanvasDisplaySize(canvas, iw, ih);
     });
+
+    // ---- Potentiometer UI: smoother dragging + single save on release ----
+    (function(){
+      const min = 1, max = 10;
+      const knob = document.getElementById('knob_down');
+      const potFront = document.getElementById('pot_front');
+      const pot = document.getElementById('potentiometer');
+      if (!knob || !potFront || !pot) return;
+
+      function valueToRatio(v){
+        return (v - min) / (max - min);
+      }
+      function ratioToAngle(r){
+        return -135 + r * 270; // returns angle in [-135,135]
+      }
+
+      // sweep geometry (we'll operate with a normalized "extended" angle range to avoid seam ambiguity)
+      const sweepStart = 225; // equivalent of -135
+      const sweepSpan = 270;  // degrees
+      const sweepEnd = sweepStart + sweepSpan; // 225..495 in extended domain
+
+      // initialize from existing input value
+      const initialVal = parseInt(knob.value || min, 10);
+      let currentRatio = Math.max(0, Math.min(1, valueToRatio(initialVal)));
+      // compute lastAngleNormalized in the extended domain [sweepStart, sweepEnd]
+      let lastAngleNorm = ratioToAngle(currentRatio);
+      // convert lastAngleNorm (which is -135..135) into extended domain 225..495
+      if (lastAngleNorm < sweepStart) lastAngleNorm += 360;
+      // apply initial visible transform
+      potFront.style.transform = `rotate(${ratioToAngle(currentRatio)}deg) scale(0.5)`;
+
+      // smoother interaction: update transform continuously, only persist when user releases
+      let dragging = false;
+      let rafPending = false;
+      let targetDisplayAngle = ratioToAngle(currentRatio);
+      let targetNormalizedAngle = lastAngleNorm;
+
+      function applyTransform(displayAngle, normalizedAngle){
+        // apply rotation + keep scale
+        potFront.style.transform = `rotate(${displayAngle}deg) scale(0.5)`;
+        // remember normalized angle so small moves across the seam pick the nearest arc
+        if (typeof normalizedAngle === 'number') lastAngleNorm = normalizedAngle;
+      }
+
+      function pagePos(e){
+        if (e.touches && e.touches[0]) return {x: e.touches[0].clientX, y: e.touches[0].clientY};
+        return {x: e.clientX, y: e.clientY};
+      }
+
+      // Convert a pointer page position into a ratio [0..1]. Uses lastAngleNorm to disambiguate
+      // angles near the seam so movement stays continuous relative to where the knob currently is.
+      function pointerToRatioAndAngles(p){
+        const rect = pot.getBoundingClientRect();
+        const cx = rect.left + rect.width/2;
+        const cy = rect.top + rect.height/2;
+        const ang = (Math.atan2(p.y - cy, p.x - cx) * 180 / Math.PI + 360) % 360; // 0..360
+
+        // Lift candidate into the same extended domain as lastAngleNorm so we can choose the nearest wrap
+        let candidate = ang;
+        if (candidate < sweepStart) candidate += 360; // now candidate approximately in [sweepStart, sweepStart+360)
+
+        // Choose the candidate (possibly shifted by +/-360) that's closest to lastAngleNorm
+        // Try adjustments of -360, 0, +360 and pick minimal delta
+        const candidates = [candidate - 360, candidate, candidate + 360];
+        let best = candidates[0];
+        let bestDelta = Math.abs(candidates[0] - lastAngleNorm);
+        for (let i = 1; i < candidates.length; i++){
+          const d = Math.abs(candidates[i] - lastAngleNorm);
+          if (d < bestDelta) { bestDelta = d; best = candidates[i]; }
+        }
+
+        // Clamp into sweep range
+        const clamped = Math.max(sweepStart, Math.min(sweepEnd, best));
+        const ratio = Math.max(0, Math.min(1, (clamped - sweepStart) / sweepSpan));
+
+        // convert clamped back to a displayable angle in [-180,180] for CSS rotate
+        let display = clamped;
+        if (display > 360) display -= 360;
+        // ensure display is within [-180,180] (not strictly necessary, but keeps values sane)
+        if (display > 180) display -= 360;
+
+        return { ratio: ratio, displayAngle: display, normalizedAngle: clamped };
+      }
+
+      function scheduleApply(displayAngle, normalizedAngle){
+        targetDisplayAngle = displayAngle;
+        targetNormalizedAngle = normalizedAngle;
+        if (rafPending) return;
+        rafPending = true;
+        requestAnimationFrame(()=>{
+          applyTransform(targetDisplayAngle, targetNormalizedAngle);
+          rafPending = false;
+        });
+      }
+
+      function updateFromPointer(e){
+        const p = pagePos(e);
+        const result = pointerToRatioAndAngles(p);
+        currentRatio = result.ratio;
+        // While dragging, remove transitions so the front follows the finger precisely
+        if (!rafPending) scheduleApply(result.displayAngle, result.normalizedAngle);
+      }
+
+      function onPointerDown(e){
+        dragging = true;
+        potFront.style.transition = 'none';
+        if (e.pointerId) pot.setPointerCapture && pot.setPointerCapture(e.pointerId);
+        updateFromPointer(e);
+      }
+
+      function onPointerUp(e){
+        if (!dragging) return;
+        dragging = false;
+        // restore CSS transition for a smooth settle
+        potFront.style.transition = 'transform 120ms linear';
+        // compute final integer value and persist
+        const finalVal = Math.round(min + currentRatio * (max - min));
+        knob.value = finalVal;
+        // apply final transform (with transition)
+        const finalRatio = Math.max(0, Math.min(1, valueToRatio(finalVal)));
+        const finalAngle = ratioToAngle(finalRatio);
+        // normalize to extended domain for lastAngleNorm bookkeeping
+        let finalNorm = finalAngle;
+        if (finalNorm < sweepStart) finalNorm += 360;
+        applyTransform(finalAngle, finalNorm);
+        try{ autoSaveAndGenerate(); }catch(e){}
+      }
+
+      // attach pointer events
+      pot.addEventListener('pointerdown', onPointerDown);
+      window.addEventListener('pointermove', (e)=>{ if (dragging) updateFromPointer(e); });
+      window.addEventListener('pointerup', onPointerUp);
+
+      // touch fallback
+      pot.addEventListener('touchstart', (e)=>{ onPointerDown(e.touches ? e.touches[0] : e); e.preventDefault(); }, {passive:false});
+      window.addEventListener('touchmove', (e)=>{ if (dragging) { updateFromPointer(e.touches ? e.touches[0] : e); e.preventDefault(); } }, {passive:false});
+      window.addEventListener('touchend', (e)=>{ onPointerUp(e.changedTouches ? e.changedTouches[0] : e); });
+    })();
   </script>
 </body>
 </html>
