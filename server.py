@@ -8,7 +8,8 @@ import time
 USER_DATA_DIR = os.path.join(os.path.dirname(__file__), 'user_data')
 os.makedirs(USER_DATA_DIR, exist_ok=True)
 
-app = Flask(__name__, static_folder='.')
+# Serve the dedicated ./static folder under the URL path /static
+app = Flask(__name__, static_folder='static')
 
 
 
