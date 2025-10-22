@@ -51,6 +51,7 @@
       flex: 1 1 auto;
       display: flex;
       align-items: center;
+      margin-bottom: 3vh;
       justify-content: center;
       overflow: hidden; /* never show scrollbars */
       -webkit-overflow-scrolling: touch;
@@ -76,11 +77,35 @@
       box-shadow: 0 -6px 18px rgba(0,0,0,0.12);
       z-index: 300; /* above canvas but below modals/overlays which use higher z */
       backdrop-filter: blur(4px);
+      transition: transform 280ms ease, opacity 200ms ease;
+      transform: translateY(0);
+    }
+    /* hidden state moves the controls off-screen */
+    #controls.hidden { transform: translateY(100%); opacity: 0; }
+    #controls.visible { transform: translateY(0); opacity: 1; }
+
+    /* small draggable handle that appears when controls are hidden */
+    #controlsHandle {
+      position: fixed;
+      left: 50%;
+      transform: translateX(-50%);
+      bottom: 8px;
+      width: 64px;
+      height: 18px;
+      border-radius: 12px;
+      background: rgba(0,0,0,0.06);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+      z-index: 1200;
+      cursor: pointer;
+      opacity: 0;
+      transition: opacity 180ms ease;
+      pointer-events: none;
     }
     #controls .btn-row { display:flex; gap:8px; align-items:center; }
 
     /* Ensure patternArea content doesn't get hidden by the fixed controls: add bottom inset */
-    #patternArea { padding-bottom: 88px; /* enough room for controls */ }
+  /* small fallback padding in case JS doesn't run; actual reserved space is computed dynamically */
+  #patternArea { padding-bottom: 12px; }
 
     @media (min-width: 900px) {
       /* On wide screens, show controls inline (not necessarily fixed) — keep small constant bar */
@@ -264,6 +289,8 @@
         <button id="printBtn">🖨️ Print Instructions</button>
       </div>
     </div>
+    <!-- Small handle to reveal hidden controls on mobile -->
+    <div id="controlsHandle" title="Show controls" aria-hidden="true"></div>
   </div>
   <div id="showSettingsTab">
     <span style="font-size:1.3em;">&#9654;</span> PepesMachine
@@ -550,7 +577,11 @@
       const areaRect = patternArea ? patternArea.getBoundingClientRect() : { width: window.innerWidth, height: window.innerHeight };
   // Fit the canvas into the patternArea viewport while preserving aspect ratio.
   const maxViewportWidth = Math.max(1, areaRect.width - 16);  // small padding
-  const maxViewportHeight = Math.max(1, areaRect.height - 16);
+  // subtract controls height so canvas doesn't sit beneath fixed controls
+  const controlsEl = document.getElementById('controls');
+  const controlsRect = controlsEl ? controlsEl.getBoundingClientRect() : { height: 0 };
+  const reserved = Math.max(12, Math.round(controlsRect.height));
+  const maxViewportHeight = Math.max(1, areaRect.height - reserved - 8);
   const scale = Math.min(maxViewportWidth / intrinsicW, maxViewportHeight / intrinsicH, 1);
   const cssW = Math.round(intrinsicW * scale);
   const cssH = Math.round(intrinsicH * scale);
@@ -938,6 +969,12 @@
       const ro = new ResizeObserver(recomputeCanvasSize);
       ro.observe(patternAreaEl);
     }
+    // Observe controls size changes so we can reserve the correct bottom space
+    const controlsEl = document.getElementById('controls');
+    if (window.ResizeObserver && controlsEl) {
+      const cro = new ResizeObserver(recomputeCanvasSize);
+      cro.observe(controlsEl);
+    }
 
     // ---- Potentiometer UI: smoother dragging + single save on release ----
     (function(){
@@ -1075,6 +1112,82 @@
       pot.addEventListener('touchstart', (e)=>{ onPointerDown(e.touches ? e.touches[0] : e); e.preventDefault(); }, {passive:false});
       window.addEventListener('touchmove', (e)=>{ if (dragging) { updateFromPointer(e.touches ? e.touches[0] : e); e.preventDefault(); } }, {passive:false});
       window.addEventListener('touchend', (e)=>{ onPointerUp(e.changedTouches ? e.changedTouches[0] : e); });
+    })();
+    // Auto-hide controls on small screens: show on interaction, hide after idle
+    (function(){
+      const controls = document.getElementById('controls');
+      const handle = document.getElementById('controlsHandle');
+      if (!controls || !handle) return;
+
+      const IDLE_MS = 2500; // hide after 2.5s of inactivity
+      let idleTimer = null;
+      let isManualOpen = false; // user explicitly opened controls via handle
+
+      function isSmallViewport() {
+        return window.innerHeight < 700 || window.innerWidth < 700; // heuristic
+      }
+
+      function showControls() {
+        controls.classList.remove('hidden');
+        controls.classList.add('visible');
+        handle.style.opacity = '0';
+        handle.style.pointerEvents = 'none';
+      }
+
+      function hideControls() {
+        if (isManualOpen) return; // don't auto-hide if user pinned it open
+        controls.classList.add('hidden');
+        controls.classList.remove('visible');
+        handle.style.opacity = '1';
+        handle.style.pointerEvents = 'auto';
+      }
+
+      function resetIdle() {
+        if (idleTimer) clearTimeout(idleTimer);
+        if (isSmallViewport()) {
+          idleTimer = setTimeout(hideControls, IDLE_MS);
+        }
+      }
+
+      // Show on pointer/move/touch
+      ['mousemove','pointermove','touchstart','touchmove'].forEach(evt => {
+        window.addEventListener(evt, () => {
+          showControls();
+          resetIdle();
+        }, { passive: true });
+      });
+
+      // Handle: toggle manual open/close on click or tap
+      handle.addEventListener('click', (e) => {
+        isManualOpen = !isManualOpen;
+        if (isManualOpen) {
+          showControls();
+        } else {
+          hideControls();
+        }
+      });
+
+      // Recompute behaviour on resize
+      window.addEventListener('resize', () => {
+        if (!isSmallViewport()) {
+          // always visible on large screens
+          controls.classList.remove('hidden');
+          controls.classList.add('visible');
+          handle.style.opacity = '0';
+        } else {
+          // start hidden on small screens
+          hideControls();
+          resetIdle();
+        }
+      });
+
+      // initialize
+      if (isSmallViewport()) {
+        hideControls();
+        resetIdle();
+      } else {
+        showControls();
+      }
     })();
   </script>
 </body>
