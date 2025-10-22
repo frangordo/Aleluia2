@@ -180,7 +180,7 @@
     #potentiometer {
       position: fixed;
       right: 18px;
-      top: 50%;
+      top: 20%;
       transform: translateY(-50%);
       width: 96px;
       height: 96px;
@@ -703,23 +703,56 @@
      }
  
      // On new generation, always append to end of history (never erase forward)
-     async function generateAndSaveHistory() {
-       // POST to /generate must include credentials so cookie (mirrored from localStorage) is sent
-       await fetch('/generate', { method: 'POST', credentials: 'same-origin' });
-       setTimeout(async () => {
-         const pattern = await fetchCurrentPattern();
-         const data = await loadJSON('data.json'); // capture the data that produced this pattern
-         // Always append new pattern+data to end of history
-         patternHistory.push({ pattern: pattern, data: data });
-         // Limit history to 100 generations
-         if (patternHistory.length > 100) {
-           patternHistory = patternHistory.slice(patternHistory.length - 100);
-         }
-         historyIndex = patternHistory.length - 1;
-         saveHistory();
-         drawPatternFromHistory(historyIndex);
-       }, 300);
-     }
+    async function generateAndSaveHistory() {
+      // POST to /generate must include credentials so cookie (mirrored from localStorage) is sent
+      const generateBtn = document.getElementById('generateBtn');
+      // disable to avoid duplicate requests while working
+      generateBtn.disabled = true;
+      try {
+        // capture previous pattern so we can detect change
+        let previous = null;
+        try { previous = await fetchCurrentPattern(); } catch (e) { previous = null; }
+        const prevStr = previous ? JSON.stringify(previous) : null;
+
+        // send generate request and wait for server to finish
+        await fetch('/generate', { method: 'POST', credentials: 'same-origin' });
+
+        // Poll for the new pattern.json until it differs from previous or timeout
+        const timeoutMs = 15000; // 15s
+        const pollInterval = 500; // 0.5s
+        const deadline = Date.now() + timeoutMs;
+        let pattern = null;
+        while (Date.now() < deadline) {
+          try {
+            pattern = await fetchCurrentPattern();
+            const patStr = JSON.stringify(pattern);
+            if (prevStr === null || patStr !== prevStr) {
+              break; // new pattern observed
+            }
+          } catch (e) {
+            // transient parse/fetch error -> keep polling
+          }
+          await new Promise(r => setTimeout(r, pollInterval));
+        }
+        // final attempt if still null
+        if (!pattern) {
+          try { pattern = await fetchCurrentPattern(); } catch (e) { pattern = []; }
+        }
+
+        const data = await loadJSON('data.json'); // capture the data that produced this pattern
+        // Always append new pattern+data to end of history
+        patternHistory.push({ pattern: pattern, data: data });
+        // Limit history to 100 generations
+        if (patternHistory.length > 100) {
+          patternHistory = patternHistory.slice(patternHistory.length - 100);
+        }
+        historyIndex = patternHistory.length - 1;
+        saveHistory();
+        drawPatternFromHistory(historyIndex);
+      } finally {
+        generateBtn.disabled = false;
+      }
+    }
 
     document.getElementById('generateBtn').onclick = generateAndSaveHistory;
 
