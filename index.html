@@ -7,7 +7,8 @@
   <link href="https://fonts.googleapis.com/css2?family=BBH+Sans+Hegarty&family=Offside&family=Rajdhani:wght@300;400;500;600;700&family=Silkscreen:wght@400;700&display=swap" rel="stylesheet">
   <title>PepesMachine</title>
   <style>
-    body { background: #ffffff; color: #210e99; margin: 0; padding: 0; }
+    /* Keep the entire page fixed to the viewport and never show document scrollbars */
+    html, body { height: 100%; margin: 0; padding: 0; overflow: hidden; background: #ffffff; color: #210e99; }
     /* swatch styles for color icons (active/inactive) */
     .swatch {
       width: 30px;
@@ -30,15 +31,45 @@
       opacity: 0.8;
       border-color: #444;
     }
+    /* Main container fills the viewport. It contains a scrollable pattern area so the
+       overall document never scrolls while the canvas may be panned internally. */
     #mainCanvasContainer {
       display: flex;
       flex-direction: column;
+      align-items: stretch;
+      justify-content: flex-start;
+      height: 100vh;
+      width: 100vw;
+      box-sizing: border-box;
+      padding: 0 8px; /* small horizontal padding so things don't hug the edges */
+      min-height: 0; /* allow children to use flex properly */
+    }
+
+    /* Area that holds the canvas. We keep overflow hidden so the page never shows scrollbars.
+       The canvas will be scaled via CSS to always fit this area. */
+    #patternArea {
+      flex: 1 1 auto;
+      display: flex;
       align-items: center;
       justify-content: center;
-      min-height: 100vh;
-      width: 100vw;
+      overflow: hidden; /* never show scrollbars */
+      -webkit-overflow-scrolling: touch;
+      min-height: 0; /* allow flex child to shrink properly */
     }
-    canvas { background: #fff; margin: 20px auto; display: block; box-shadow: 0 2px 16px #0006; }
+
+    /* Canvas styling: remove large margins that could cause document overflow */
+    canvas { background: #fff; display: block; box-shadow: 0 2px 16px #0006; max-width: none; max-height: none; }
+
+    /* Controls bar (always visible at bottom of main container) */
+    #controls {
+      flex: 0 0 auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      padding: 10px 8px;
+    }
+    #controls .btn-row { display:flex; gap:8px; align-items:center; }
     #settingsOverlay {
       position: fixed;
       top: 0; left: 0; width: 100vw; height: 100vh;
@@ -206,12 +237,16 @@
     <img id="pot_front" src="/static/button_zoom_front.png" alt="pot-front">
     <div id="pot_value" aria-hidden="true" style="display:none"></div>
   </div>
-    <canvas id="patternCanvas"></canvas>
-    <button id="generateBtn">Generate New Pattern</button>
-    <div style="margin-top:10px;">
-      <button id="backBtn" disabled>&#8592; Go Back</button>
-      <button id="forwardBtn" disabled>Go Forward &#8594;</button>
-      <button id="printBtn">🖨️ Print Instructions</button>
+    <div id="patternArea">
+      <canvas id="patternCanvas"></canvas>
+    </div>
+    <div id="controls">
+      <div class="btn-row"><button id="generateBtn">Generate New Pattern</button></div>
+      <div class="btn-row">
+        <button id="backBtn" disabled>&#8592; Go Back</button>
+        <button id="forwardBtn" disabled>Go Forward &#8594;</button>
+        <button id="printBtn">🖨️ Print Instructions</button>
+      </div>
     </div>
   </div>
   <div id="showSettingsTab">
@@ -494,12 +529,20 @@
 
     // Helper: keep large intrinsic canvas but scale the displayed size to fit the screen
     function applyCanvasDisplaySize(canvas, intrinsicW, intrinsicH) {
-      // how much of the viewport we allow the canvas to use
-      const maxViewportWidth = window.innerWidth * 0.95;  // 95% of viewport width
-      const maxViewportHeight = window.innerHeight * 0.8; // 80% of viewport height (leave room for header/buttons)
-      const scale = Math.min(maxViewportWidth / intrinsicW, maxViewportHeight / intrinsicH, 1);
-      canvas.style.width = Math.round(intrinsicW * scale) + 'px';
-      canvas.style.height = Math.round(intrinsicH * scale) + 'px';
+      // how much of the patternArea viewport we allow the canvas to use
+      const patternArea = document.getElementById('patternArea');
+      const areaRect = patternArea ? patternArea.getBoundingClientRect() : { width: window.innerWidth, height: window.innerHeight };
+  // Fit the canvas into the patternArea viewport while preserving aspect ratio.
+  const maxViewportWidth = Math.max(1, areaRect.width - 16);  // small padding
+  const maxViewportHeight = Math.max(1, areaRect.height - 16);
+  const scale = Math.min(maxViewportWidth / intrinsicW, maxViewportHeight / intrinsicH, 1);
+  const cssW = Math.round(intrinsicW * scale);
+  const cssH = Math.round(intrinsicH * scale);
+  canvas.style.width = cssW + 'px';
+  canvas.style.height = cssH + 'px';
+  // ensure the canvas doesn't exceed the area (safety)
+  canvas.style.maxWidth = Math.round(maxViewportWidth) + 'px';
+  canvas.style.maxHeight = Math.round(maxViewportHeight) + 'px';
       // store intrinsic size so resize handler can reapply scale
       canvas.dataset.intrinsicWidth = intrinsicW;
       canvas.dataset.intrinsicHeight = intrinsicH;
@@ -557,6 +600,8 @@
         const size = drawSize * Math.min(drawScaleX, drawScaleY);
         drawTile(ctx, tile, x, y, size);
       });
+      // After drawing, ensure the canvas CSS is sized to fit the patternArea
+      recomputeCanvasSize();
     }
 
     // Pattern history management
@@ -700,6 +745,8 @@
          });
        }
        updateHistoryButtons();
+      // ensure canvas CSS fits the patternArea after drawing history
+      recomputeCanvasSize();
      }
  
      // On new generation, always append to end of history (never erase forward)
@@ -861,12 +908,20 @@
     };
 
     // Keep displayed canvas scaled properly when the window resizes
-    window.addEventListener('resize', () => {
+    // Recompute canvas CSS size when the window or pattern area change size
+    function recomputeCanvasSize() {
       const canvas = document.getElementById('patternCanvas');
       const iw = parseInt(canvas.dataset.intrinsicWidth || 0, 10);
       const ih = parseInt(canvas.dataset.intrinsicHeight || 0, 10);
       if (iw && ih) applyCanvasDisplaySize(canvas, iw, ih);
-    });
+    }
+    window.addEventListener('resize', recomputeCanvasSize);
+    // Observe patternArea size changes (use ResizeObserver if available)
+    const patternAreaEl = document.getElementById('patternArea');
+    if (window.ResizeObserver && patternAreaEl) {
+      const ro = new ResizeObserver(recomputeCanvasSize);
+      ro.observe(patternAreaEl);
+    }
 
     // ---- Potentiometer UI: smoother dragging + single save on release ----
     (function(){
