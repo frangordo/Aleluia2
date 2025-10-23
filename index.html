@@ -655,6 +655,10 @@
     let patternHistory = [];
     let historyIndex = -1;
     let debounceTimer = null;
+  // Flag to indicate a generation is in progress (server processing + waiting for pattern.json)
+  let isGenerationInProgress = false;
+  // If a generation request arrives while another is in progress, queue one follow-up run
+  let needsGenerateAfterCurrent = false;
 
     function patternsAreEqual(a, b) {
       return JSON.stringify(a) === JSON.stringify(b);
@@ -798,40 +802,41 @@
  
      // On new generation, always append to end of history (never erase forward)
     async function generateAndSaveHistory() {
+      // Avoid starting another generation if one is already in progress
+      if (isGenerationInProgress) return;
       // POST to /generate must include credentials so cookie (mirrored from localStorage) is sent
       const generateBtn = document.getElementById('generateBtn');
       // disable to avoid duplicate requests while working
       generateBtn.disabled = true;
+      isGenerationInProgress = true;
       try {
         // capture previous pattern so we can detect change
         let previous = null;
         try { previous = await fetchCurrentPattern(); } catch (e) { previous = null; }
         const prevStr = previous ? JSON.stringify(previous) : null;
 
-        // send generate request and wait for server to finish
+        // send generate request and let the server start background work
         await fetch('/generate', { method: 'POST', credentials: 'same-origin' });
 
-        // Poll for the new pattern.json until it differs from previous or timeout
-        const timeoutMs = 15000; // 15s
+        // Poll the server /generate/status endpoint until it reports done (or timeout)
+        const timeoutMs = 60000; // 60s
         const pollInterval = 500; // 0.5s
         const deadline = Date.now() + timeoutMs;
-        let pattern = null;
+        let status = null;
         while (Date.now() < deadline) {
           try {
-            pattern = await fetchCurrentPattern();
-            const patStr = JSON.stringify(pattern);
-            if (prevStr === null || patStr !== prevStr) {
-              break; // new pattern observed
-            }
+            const resp = await fetch('/generate/status', { credentials: 'same-origin' });
+            const js = await resp.json();
+            status = js && js.status;
+            if (status === 'done') break;
           } catch (e) {
-            // transient parse/fetch error -> keep polling
+            // transient error -> keep polling
           }
           await new Promise(r => setTimeout(r, pollInterval));
         }
-        // final attempt if still null
-        if (!pattern) {
-          try { pattern = await fetchCurrentPattern(); } catch (e) { pattern = []; }
-        }
+        // finally fetch the pattern (best-effort)
+        let pattern = [];
+        try { pattern = await fetchCurrentPattern(); } catch (e) { pattern = []; }
 
         const data = await loadJSON('data.json'); // capture the data that produced this pattern
         // Always append new pattern+data to end of history
@@ -844,7 +849,16 @@
         saveHistory();
         drawPatternFromHistory(historyIndex);
       } finally {
+        isGenerationInProgress = false;
         generateBtn.disabled = false;
+        // If any changes happened while we were generating, run one follow-up generation
+        if (needsGenerateAfterCurrent) {
+          needsGenerateAfterCurrent = false;
+          // schedule shortly so we don't recurse deeply
+          setTimeout(() => {
+            generateAndSaveHistory();
+          }, 50);
+        }
       }
     }
 
@@ -883,9 +897,15 @@
       }
       await postJSON('/data.json', data);
 
-      // Debounce pattern generation
+      // Debounce pattern generation. If a generation is already in progress, queue one follow-up.
       if (debounceTimer) clearTimeout(debounceTimer);
-      debounceTimer = setTimeout(generateAndSaveHistory, 400);
+      if (!isGenerationInProgress) {
+        debounceTimer = setTimeout(generateAndSaveHistory, 400);
+      } else {
+        // mark that we need one generation after current finishes
+        needsGenerateAfterCurrent = true;
+        debounceTimer = null;
+      }
     }
 
     // Overlay logic

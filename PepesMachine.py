@@ -2,6 +2,7 @@ import random
 import json
 import os
 import sys
+import time
 
 REQUEST_SETTINGS = None
 
@@ -821,7 +822,40 @@ if __name__ == '__main__':
     global gridValues
     gridValues = {}
     # If the script is invoked directly as a subprocess, write per-session pattern file as configured above
-    draw_pepe(write_to_file=True)
+    # Ensure any previous status markers for this session are cleared
+    try:
+        if SESSION_ID:
+            run_marker = os.path.join(USER_DATA_DIR, f"generate_{SESSION_ID}.running")
+            done_marker = os.path.join(USER_DATA_DIR, f"generate_{SESSION_ID}.done")
+        else:
+            run_marker = os.path.join(BASE_DIR, 'generate.running')
+            done_marker = os.path.join(BASE_DIR, 'generate.done')
+        # remove existing done marker
+        if os.path.exists(done_marker):
+            os.remove(done_marker)
+    except Exception:
+        pass
+
+    try:
+        draw_pepe(write_to_file=True)
+        # On successful completion, touch done marker and remove running marker
+        try:
+            with open(done_marker, 'w') as f:
+                f.write(str(time.time()))
+        except Exception:
+            pass
+        try:
+            if os.path.exists(run_marker):
+                os.remove(run_marker)
+        except Exception:
+            pass
+    except Exception:
+        # On failure, try to remove running marker so server won't think it's stuck
+        try:
+            if os.path.exists(run_marker):
+                os.remove(run_marker)
+        except Exception:
+            pass
 
 
 # Print all non-empty grid values in a readable way

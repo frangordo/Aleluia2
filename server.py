@@ -132,9 +132,53 @@ def generate():
     env = dict(os.environ)
     if sid:
         env['SESSION_ID'] = sid
-    # Use same python interpreter running the server
-    subprocess.run([sys.executable, os.path.join(os.path.dirname(__file__), 'PepesMachine.py')], env=env)
-    return jsonify({"status": "ok"})
+    # Start generation in a background process so the request returns quickly.
+    # We create a '.running' marker file so clients can poll for status.
+    run_marker = os.path.join(USER_DATA_DIR, f"generate_{sid}.running") if sid else os.path.join(os.path.dirname(__file__), 'generate.running')
+    done_marker = os.path.join(USER_DATA_DIR, f"generate_{sid}.done") if sid else os.path.join(os.path.dirname(__file__), 'generate.done')
+    try:
+        # remove old done marker if present
+        if os.path.exists(done_marker):
+            os.remove(done_marker)
+    except Exception:
+        pass
+    try:
+        # touch running marker
+        with open(run_marker, 'w') as f:
+            f.write(str(time.time()))
+    except Exception:
+        pass
+
+    # Launch child detached
+    python = sys.executable
+    script = os.path.join(os.path.dirname(__file__), 'PepesMachine.py')
+    # on Windows, creationflags can be used to detach; subprocess.Popen is sufficient here
+    try:
+        subprocess.Popen([python, script], env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    except Exception as e:
+        # fallback to blocking run if spawn fails
+        try:
+            subprocess.run([python, script], env=env)
+        except Exception:
+            return jsonify({"status": "error", "message": str(e)}), 500
+
+    return jsonify({"status": "started"})
+
+
+@app.route('/generate/status')
+def generate_status():
+    sid = _session_id_from_request()
+    run_marker = os.path.join(USER_DATA_DIR, f"generate_{sid}.running") if sid else os.path.join(os.path.dirname(__file__), 'generate.running')
+    done_marker = os.path.join(USER_DATA_DIR, f"generate_{sid}.done") if sid else os.path.join(os.path.dirname(__file__), 'generate.done')
+    # If done marker exists, return done; if running marker exists return running; else return idle
+    try:
+        if os.path.exists(done_marker):
+            return jsonify({"status": "done"})
+        if os.path.exists(run_marker):
+            return jsonify({"status": "running"})
+    except Exception:
+        pass
+    return jsonify({"status": "idle"})
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
