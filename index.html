@@ -811,35 +811,27 @@
       generateBtn.disabled = true;
       isGenerationInProgress = true;
       try {
-        // capture previous pattern so we can detect change
-        let previous = null;
-        try { previous = await fetchCurrentPattern(); } catch (e) { previous = null; }
-        const prevStr = previous ? JSON.stringify(previous) : null;
-
-        // send generate request and wait for server to finish
+        // send generate request and then poll server status for completion
         await fetch('/generate', { method: 'POST', credentials: 'same-origin' });
 
-  // Poll for the new pattern.json until it differs from previous or timeout
-  const timeoutMs = 60000; // 60s
-        const pollInterval = 500; // 0.5s
+        const timeoutMs = 60000; // 60s
+        const pollInterval = 400; // 0.4s
         const deadline = Date.now() + timeoutMs;
-        let pattern = null;
+        let status = 'running';
         while (Date.now() < deadline) {
           try {
-            pattern = await fetchCurrentPattern();
-            const patStr = JSON.stringify(pattern);
-            if (prevStr === null || patStr !== prevStr) {
-              break; // new pattern observed
-            }
+            const resp = await fetch('/generate/status', { credentials: 'same-origin' });
+            const js = await resp.json();
+            status = js && js.status || 'idle';
+            if (status === 'done') break;
           } catch (e) {
-            // transient parse/fetch error -> keep polling
+            // ignore transient errors
           }
           await new Promise(r => setTimeout(r, pollInterval));
         }
-        // final attempt if still null
-        if (!pattern) {
-          try { pattern = await fetchCurrentPattern(); } catch (e) { pattern = []; }
-        }
+        // Now fetch the latest pattern once
+        let pattern = [];
+        try { pattern = await fetchCurrentPattern(); } catch (e) { pattern = []; }
 
         const data = await loadJSON('data.json'); // capture the data that produced this pattern
         // Always append new pattern+data to end of history

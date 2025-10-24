@@ -2,6 +2,7 @@ import random
 import json
 import os
 import sys
+import time
 
 REQUEST_SETTINGS = None
 
@@ -12,6 +13,23 @@ USER_DATA_DIR = os.path.join(BASE_DIR, 'user_data')
 os.makedirs(USER_DATA_DIR, exist_ok=True)
 DATA_FILE = os.path.join(USER_DATA_DIR, f"data_{SESSION_ID}.json") if SESSION_ID else os.path.join(BASE_DIR, "data.json")
 PATTERN_FILE = os.path.join(USER_DATA_DIR, f"pattern_{SESSION_ID}.json") if SESSION_ID else os.path.join(BASE_DIR, "pattern.json")
+
+# Generation status marker files (used by Flask /generate/status)
+RUN_MARKER = os.path.join(USER_DATA_DIR, f"generate_{SESSION_ID}.running") if SESSION_ID else os.path.join(BASE_DIR, 'generate.running')
+DONE_MARKER = os.path.join(USER_DATA_DIR, f"generate_{SESSION_ID}.done") if SESSION_ID else os.path.join(BASE_DIR, 'generate.done')
+
+def _mark_generation_done():
+    """Create a 'done' marker and remove the 'running' marker if present."""
+    try:
+        with open(DONE_MARKER, 'w') as f:
+            f.write(str(time.time()))
+    except Exception:
+        pass
+    try:
+        if os.path.exists(RUN_MARKER):
+            os.remove(RUN_MARKER)
+    except Exception:
+        pass
 
 
 def draw0(self,x,y,xdist,ydist):
@@ -788,8 +806,10 @@ def draw_pepe(write_to_file=True):
     if write_to_file:
         # Ensure user_data directory exists (should already)
         os.makedirs(os.path.dirname(PATTERN_FILE), exist_ok=True)
+        # Write the pattern to file, then mark generation done
         with open(PATTERN_FILE, "w") as f:
             json.dump(pattern_data, f, indent=2)
+        _mark_generation_done()
         return None
     else:
          # Return the pattern data to caller (in-memory)
@@ -821,7 +841,15 @@ if __name__ == '__main__':
     global gridValues
     gridValues = {}
     # If the script is invoked directly as a subprocess, write per-session pattern file as configured above
-    draw_pepe(write_to_file=True)
+    try:
+        draw_pepe(write_to_file=True)
+    finally:
+        # As a safety, try to remove running marker even if an exception occurred
+        try:
+            if os.path.exists(RUN_MARKER):
+                os.remove(RUN_MARKER)
+        except Exception:
+            pass
 
 
 # Print all non-empty grid values in a readable way
