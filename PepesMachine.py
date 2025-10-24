@@ -2,7 +2,6 @@ import random
 import json
 import os
 import sys
-import time
 
 REQUEST_SETTINGS = None
 
@@ -543,15 +542,15 @@ def get_canvas_dimensions():
             data = REQUEST_SETTINGS
             altTela = int(data.get("canvas_height", 500))
             largTela = int(data.get("canvas_width", 500))
-            altTela = max(100, min(1000000, altTela))
-            largTela = max(100, min(1000000, largTela))
+            altTela = max(100, min(10000000, altTela))
+            largTela = max(100, min(10000000, largTela))
         else:
             with open(DATA_FILE, "r") as f:
                 data = json.load(f)
                 altTela = int(data.get("canvas_height", 500))
                 largTela = int(data.get("canvas_width", 500))
-                altTela = max(100, min(1000000, altTela))
-                largTela = max(100, min(1000000, largTela))
+                altTela = max(100, min(10000000, altTela))
+                largTela = max(100, min(10000000, largTela))
     except (FileNotFoundError, ValueError, json.JSONDecodeError):
         altTela = 500
         largTela = 500
@@ -822,40 +821,7 @@ if __name__ == '__main__':
     global gridValues
     gridValues = {}
     # If the script is invoked directly as a subprocess, write per-session pattern file as configured above
-    # Ensure any previous status markers for this session are cleared
-    try:
-        if SESSION_ID:
-            run_marker = os.path.join(USER_DATA_DIR, f"generate_{SESSION_ID}.running")
-            done_marker = os.path.join(USER_DATA_DIR, f"generate_{SESSION_ID}.done")
-        else:
-            run_marker = os.path.join(BASE_DIR, 'generate.running')
-            done_marker = os.path.join(BASE_DIR, 'generate.done')
-        # remove existing done marker
-        if os.path.exists(done_marker):
-            os.remove(done_marker)
-    except Exception:
-        pass
-
-    try:
-        draw_pepe(write_to_file=True)
-        # On successful completion, touch done marker and remove running marker
-        try:
-            with open(done_marker, 'w') as f:
-                f.write(str(time.time()))
-        except Exception:
-            pass
-        try:
-            if os.path.exists(run_marker):
-                os.remove(run_marker)
-        except Exception:
-            pass
-    except Exception:
-        # On failure, try to remove running marker so server won't think it's stuck
-        try:
-            if os.path.exists(run_marker):
-                os.remove(run_marker)
-        except Exception:
-            pass
+    draw_pepe(write_to_file=True)
 
 
 # Print all non-empty grid values in a readable way

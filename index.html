@@ -815,28 +815,30 @@
         try { previous = await fetchCurrentPattern(); } catch (e) { previous = null; }
         const prevStr = previous ? JSON.stringify(previous) : null;
 
-        // send generate request and let the server start background work
+        // send generate request and wait for server to finish
         await fetch('/generate', { method: 'POST', credentials: 'same-origin' });
 
-        // Poll the server /generate/status endpoint until it reports done (or timeout)
-        const timeoutMs = 60000; // 60s
+  // Poll for the new pattern.json until it differs from previous or timeout
+  const timeoutMs = 60000; // 60s
         const pollInterval = 500; // 0.5s
         const deadline = Date.now() + timeoutMs;
-        let status = null;
+        let pattern = null;
         while (Date.now() < deadline) {
           try {
-            const resp = await fetch('/generate/status', { credentials: 'same-origin' });
-            const js = await resp.json();
-            status = js && js.status;
-            if (status === 'done') break;
+            pattern = await fetchCurrentPattern();
+            const patStr = JSON.stringify(pattern);
+            if (prevStr === null || patStr !== prevStr) {
+              break; // new pattern observed
+            }
           } catch (e) {
-            // transient error -> keep polling
+            // transient parse/fetch error -> keep polling
           }
           await new Promise(r => setTimeout(r, pollInterval));
         }
-        // finally fetch the pattern (best-effort)
-        let pattern = [];
-        try { pattern = await fetchCurrentPattern(); } catch (e) { pattern = []; }
+        // final attempt if still null
+        if (!pattern) {
+          try { pattern = await fetchCurrentPattern(); } catch (e) { pattern = []; }
+        }
 
         const data = await loadJSON('data.json'); // capture the data that produced this pattern
         // Always append new pattern+data to end of history
