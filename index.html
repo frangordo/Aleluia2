@@ -55,11 +55,13 @@
       justify-content: center;
       overflow: hidden; /* never show scrollbars */
       -webkit-overflow-scrolling: touch;
+      position: relative; /* allow absolute overlay alignment */
       min-height: 0; /* allow flex child to shrink properly */
     }
 
-    /* Canvas styling: remove large margins that could cause document overflow */
-    canvas { background: #fff; display: block; box-shadow: 0 2px 16px #0006; max-width: none; max-height: none; }
+  /* Canvas styling: target only the main pattern canvas; overlay stays transparent */
+  #patternCanvas { display: block; box-shadow: 0 2px 16px #0006; max-width: none; max-height: none; }
+  #overlayCanvas { background: transparent !important; box-shadow: none !important; }
 
     /* Controls bar: fixed to the viewport bottom so it never disappears.
        It sits above the pattern area and has a translucent background. */
@@ -308,6 +310,8 @@
   </div>
     <div id="patternArea">
       <canvas id="patternCanvas"></canvas>
+      <!-- Overlay canvas for selection visualization -->
+      <canvas id="overlayCanvas" style="position:absolute; left:0; top:0; pointer-events:none;"></canvas>
     </div>
     <div id="controls">
       <div class="btn-row">
@@ -320,6 +324,7 @@
       <div class="btn-row">
         <button id="backBtn" disabled>&#8592; Go Back</button>
         <button id="forwardBtn" disabled>Go Forward &#8594;</button>
+        <button id="magicWandBtn" title="Select two tiles to fill a rectangular region">✨ Magic Wand</button>
         <button id="printBtn">🖨️ Print Instructions</button>
       </div>
     </div>
@@ -630,8 +635,10 @@
       canvas.dataset.displayScale = scale;
     }
 
+    let currentPattern = [];
     async function drawPattern() {
       const pattern = await loadJSON('pattern.json');
+      currentPattern = Array.isArray(pattern) ? pattern : [];
       const data = await loadJSON('data.json');
       const canvas = document.getElementById('patternCanvas');
       const width = data.canvas_width || 500;
@@ -665,8 +672,9 @@
       const offsetX = (width - tileSize * cols) / 2;
       const offsetY = (height - tileSize * rows) / 2;
 
-      const ctx = canvas.getContext('2d');
-      ctx.clearRect(0, 0, width, height);
+  const ctx = canvas.getContext('2d');
+  // Clear the full backing buffer (use adjusted size)
+  ctx.clearRect(0, 0, adjusted.width, adjusted.height);
 
       // Fill background with white for margins
       ctx.fillStyle = "#fff";
@@ -794,6 +802,7 @@
       if (patternHistory[idx]) {
         const entry = patternHistory[idx];
         const pattern = entry.pattern || entry; // support legacy
+        currentPattern = Array.isArray(pattern) ? pattern : [];
         // prefer saved data that matches this pattern; fallback to current data.json
         let data = entry.data;
         if (!data) {
@@ -1004,9 +1013,8 @@
     // Print button logic
     document.getElementById('printBtn').onclick = function() {
       const entry = patternHistory[historyIndex];
-      if (!entry) return;
-      // entry may be { pattern, data } or legacy pattern array
-      const pattern = entry.pattern || entry;
+      // Prefer the currently drawn pattern to guarantee latest edits are included
+      const pattern = (currentPattern && currentPattern.length) ? currentPattern : (entry ? (entry.pattern || entry) : []);
       const instructions = getDrawingInstructions(pattern);
       const blob = new Blob([instructions], { type: 'text/plain' });
       const url = URL.createObjectURL(blob);
@@ -1028,6 +1036,8 @@
       const iw = parseInt(canvas.dataset.intrinsicWidth || 0, 10);
       const ih = parseInt(canvas.dataset.intrinsicHeight || 0, 10);
       if (iw && ih) applyCanvasDisplaySize(canvas, iw, ih);
+      // keep overlay aligned with the canvas
+      if (typeof syncOverlayToCanvas === 'function') syncOverlayToCanvas();
     }
     window.addEventListener('resize', recomputeCanvasSize);
     // Observe patternArea size changes (use ResizeObserver if available)
@@ -1041,6 +1051,30 @@
     if (window.ResizeObserver && controlsEl) {
       const cro = new ResizeObserver(recomputeCanvasSize);
       cro.observe(controlsEl);
+    }
+
+    // Keep the overlay canvas aligned and scaled to the visible pattern canvas
+    function syncOverlayToCanvas() {
+      const area = document.getElementById('patternArea');
+      const canvas = document.getElementById('patternCanvas');
+      const overlay = document.getElementById('overlayCanvas');
+      if (!area || !canvas || !overlay) return;
+      const areaRect = area.getBoundingClientRect();
+      const canvasRect = canvas.getBoundingClientRect();
+      const cssW = Math.max(1, Math.round(canvasRect.width));
+      const cssH = Math.max(1, Math.round(canvasRect.height));
+      overlay.style.width = cssW + 'px';
+      overlay.style.height = cssH + 'px';
+      overlay.style.left = Math.round(canvasRect.left - areaRect.left) + 'px';
+      overlay.style.top = Math.round(canvasRect.top - areaRect.top) + 'px';
+      const dpr = window.devicePixelRatio || 1;
+      const newW = Math.max(1, Math.floor(cssW * dpr));
+      const newH = Math.max(1, Math.floor(cssH * dpr));
+      if (overlay.width !== newW) overlay.width = newW;
+      if (overlay.height !== newH) overlay.height = newH;
+      // clear any previous drawings when size changes
+      const octx = overlay.getContext('2d');
+      octx.clearRect(0, 0, overlay.width, overlay.height);
     }
 
     // ---- Potentiometer UI: smoother dragging + single save on release ----
@@ -1255,6 +1289,231 @@
       } else {
         showControls();
       }
+    })();
+
+    // ---- Division-level edit interactions ----
+    (function(){
+      const canvas = document.getElementById('patternCanvas');
+      if (!canvas) return;
+      const overlay = document.getElementById('overlayCanvas');
+
+      // Magic Wand state
+      let wandMode = false;
+      let wandFirst = null;
+      const wandBtn = document.getElementById('magicWandBtn');
+      function setWand(active){
+        wandMode = !!active;
+        wandFirst = null;
+        if (wandBtn){ wandBtn.classList.toggle('active', wandMode); wandBtn.textContent = wandMode ? '✨ Wand: pick 2 tiles' : '✨ Magic Wand'; }
+        if (!wandMode) { clearOverlay(); }
+        // ensure overlay is sized when toggling on
+        if (wandMode && typeof syncOverlayToCanvas === 'function') syncOverlayToCanvas();
+      }
+      if (wandBtn){ wandBtn.addEventListener('click', ()=> setWand(!wandMode)); }
+
+      function clearOverlay(){
+        if (!overlay) return;
+        const octx = overlay.getContext('2d');
+        octx.clearRect(0, 0, overlay.width, overlay.height);
+      }
+
+      // Compute layout in intrinsic coordinates and the CSS display scale
+      function getLayout(){
+        const iw = parseInt(canvas.dataset.intrinsicWidth || canvas.width, 10);
+        const ih = parseInt(canvas.dataset.intrinsicHeight || canvas.height, 10);
+        if (!iw || !ih || !currentPattern || !currentPattern.length) return null;
+        let maxX = 0, maxY = 0;
+        currentPattern.forEach(t => { if (t.grid_x > maxX) maxX = t.grid_x; if (t.grid_y > maxY) maxY = t.grid_y; });
+        const cols = Math.max(1, maxX);
+        const rows = Math.max(1, maxY);
+        const tileSize = Math.min(iw / cols, ih / rows);
+        const margin = tileSize * TILE_MARGIN_RATIO;
+        const offsetX = (iw - tileSize * cols) / 2;
+        const offsetY = (ih - tileSize * rows) / 2;
+        const displayScale = parseFloat(canvas.dataset.displayScale || '1') || 1;
+        return { iw, ih, cols, rows, tileSize, margin, offsetX, offsetY, displayScale };
+      }
+
+      function drawWandOverlay(hover){
+        if (!overlay) return;
+        if (!wandMode || !wandFirst || !hover) { clearOverlay(); return; }
+        const L = getLayout();
+        if (!L) { clearOverlay(); return; }
+        const x0 = Math.min(wandFirst.grid_x, hover.grid_x);
+        const x1 = Math.max(wandFirst.grid_x, hover.grid_x);
+        const y0 = Math.min(wandFirst.grid_y, hover.grid_y);
+        const y1 = Math.max(wandFirst.grid_y, hover.grid_y);
+
+        // rectangle in intrinsic display coords (like drawPattern x_disp / drawSize union)
+        const startX = L.offsetX + (x0 - 1) * L.tileSize + L.margin / 2;
+        const startY = L.offsetY + (y0 - 1) * L.tileSize + L.margin / 2;
+        const selW = (x1 - x0 + 1) * L.tileSize - L.margin;
+        const selH = (y1 - y0 + 1) * L.tileSize - L.margin;
+
+        // convert to CSS pixels via displayScale, then to overlay backing pixels via DPR
+        const cssX = startX * L.displayScale;
+        const cssY = startY * L.displayScale;
+        const cssW = selW * L.displayScale;
+        const cssH = selH * L.displayScale;
+        const dpr = window.devicePixelRatio || 1;
+        const pxX = Math.round(cssX * dpr);
+        const pxY = Math.round(cssY * dpr);
+        const pxW = Math.max(1, Math.round(cssW * dpr));
+        const pxH = Math.max(1, Math.round(cssH * dpr));
+
+        const octx = overlay.getContext('2d');
+        octx.clearRect(0, 0, overlay.width, overlay.height);
+        octx.save();
+        octx.strokeStyle = 'rgba(0,128,255,0.85)';
+        octx.fillStyle = 'rgba(0,128,255,0.18)';
+        octx.lineWidth = Math.max(1, Math.round(2 * dpr));
+        octx.beginPath();
+        octx.rect(pxX + 0.5, pxY + 0.5, pxW - 1, pxH - 1);
+        octx.fill();
+        octx.stroke();
+        octx.restore();
+      }
+
+      function getGridFromEvent(e){
+        const rect = canvas.getBoundingClientRect();
+        const cssW = rect.width || 1;
+        const cssH = rect.height || 1;
+        const dx = (e.clientX - rect.left);
+        const dy = (e.clientY - rect.top);
+        // convert from CSS pixels to backing buffer pixels
+        const backX = dx * (canvas.width / cssW);
+        const backY = dy * (canvas.height / cssH);
+
+        const iw = parseInt(canvas.dataset.intrinsicWidth || canvas.width, 10);
+        const ih = parseInt(canvas.dataset.intrinsicHeight || canvas.height, 10);
+        const width = iw || canvas.width;
+        const height = ih || canvas.height;
+
+        // reconstruct layout like drawPattern
+        let maxX = 0, maxY = 0;
+        currentPattern.forEach(t => { if (t.grid_x > maxX) maxX = t.grid_x; if (t.grid_y > maxY) maxY = t.grid_y; });
+        const cols = Math.max(1, maxX);
+        const rows = Math.max(1, maxY);
+        const tileSize = Math.min(width / cols, height / rows);
+        const margin = tileSize * TILE_MARGIN_RATIO;
+        const offsetX = (width - tileSize * cols) / 2;
+        const offsetY = (height - tileSize * rows) / 2;
+
+        // drawing buffer scale factors
+        const drawScaleX = canvas.width / width;
+        const drawScaleY = canvas.height / height;
+        // invert to logical (intrinsic) coordinates used for layout
+        const x_disp = backX / drawScaleX;
+        const y_disp = backY / drawScaleY;
+
+        const gx = Math.floor((x_disp - offsetX) / tileSize) + 1;
+        const gy = Math.floor((y_disp - offsetY) / tileSize) + 1;
+        if (gx < 1 || gy < 1 || gx > cols || gy > rows) return null;
+        return { grid_x: gx, grid_y: gy };
+      }
+
+      async function postWand(x1,y1,x2,y2){
+        try{
+          const resp = await fetch('/magic-wand', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'same-origin',
+            body: JSON.stringify({ x1, y1, x2, y2 })
+          });
+          const js = await resp.json();
+          if (!resp.ok) throw new Error(js && js.message || 'Magic wand failed');
+          const pattern = js.pattern || [];
+          const data = await loadJSON('data.json');
+          patternHistory.push({ pattern, data });
+          if (patternHistory.length > 100) patternHistory = patternHistory.slice(-100);
+          historyIndex = patternHistory.length - 1;
+          await drawPatternFromHistory(historyIndex);
+          saveHistory();
+        }catch(err){ console.warn('magic-wand failed', err); }
+      }
+
+      async function postEdit(region_id, action){
+        try{
+          const resp = await fetch('/edit-region', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'same-origin',
+            body: JSON.stringify({ region_id, action })
+          });
+          const js = await resp.json();
+          if (!resp.ok) throw new Error(js && js.message || 'Edit failed');
+          const pattern = js.pattern || [];
+          // push to history and draw
+          const data = await loadJSON('data.json');
+          patternHistory.push({ pattern, data });
+          if (patternHistory.length > 100) patternHistory = patternHistory.slice(-100);
+          historyIndex = patternHistory.length - 1;
+          await drawPatternFromHistory(historyIndex);
+          saveHistory();
+        }catch(err){
+          console.warn('edit-region failed', err);
+        }
+      }
+
+      canvas.addEventListener('click', async (e)=>{
+        const g = getGridFromEvent(e);
+        if (!g) return;
+        if (wandMode){
+          if (!wandFirst){
+            wandFirst = g;
+            // draw single-tile overlay to indicate first selection
+            drawWandOverlay(g);
+          } else {
+            const a = wandFirst; const b = g;
+            setWand(false);
+            clearOverlay();
+            await postWand(a.grid_x, a.grid_y, b.grid_x, b.grid_y);
+          }
+          return;
+        }
+        // find tile
+        const tile = currentPattern.find(t => t.grid_x === g.grid_x && t.grid_y === g.grid_y);
+        if (!tile || tile.region_id == null) return;
+        await postEdit(tile.region_id, 'reroll');
+      });
+
+      // Right-click -> recolor
+      canvas.addEventListener('contextmenu', async (e)=>{
+        e.preventDefault();
+        const g = getGridFromEvent(e);
+        if (!g) return false;
+        if (wandMode){ return false; }
+        const tile = currentPattern.find(t => t.grid_x === g.grid_x && t.grid_y === g.grid_y);
+        if (!tile || tile.region_id == null) return false;
+        await postEdit(tile.region_id, 'recolor');
+        return false;
+      });
+
+      // Basic long-press for touch recolor
+      let touchTimer = null;
+      canvas.addEventListener('touchstart', (e)=>{
+        if (touchTimer) clearTimeout(touchTimer);
+        const touch = e.touches && e.touches[0];
+        if (!touch) return;
+        const ev = { clientX: touch.clientX, clientY: touch.clientY };
+        touchTimer = setTimeout(async ()=>{
+          const g = getGridFromEvent(ev);
+          if (!g) return;
+          const tile = currentPattern.find(t => t.grid_x === g.grid_x && t.grid_y === g.grid_y);
+          if (!tile || tile.region_id == null) return;
+          await postEdit(tile.region_id, 'recolor');
+        }, 550);
+      }, { passive: true });
+      canvas.addEventListener('touchend', ()=>{ if (touchTimer) { clearTimeout(touchTimer); touchTimer = null; } }, { passive: true });
+      canvas.addEventListener('touchmove', ()=>{ if (touchTimer) { clearTimeout(touchTimer); touchTimer = null; } }, { passive: true });
+
+      // Hover visualization for Magic Wand
+      canvas.addEventListener('mousemove', (e)=>{
+        if (!wandMode || !wandFirst) { clearOverlay(); return; }
+        const g = getGridFromEvent(e);
+        drawWandOverlay(g);
+      });
+      canvas.addEventListener('mouseleave', ()=>{ clearOverlay(); });
     })();
   </script>
 </body>

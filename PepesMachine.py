@@ -13,6 +13,7 @@ USER_DATA_DIR = os.path.join(BASE_DIR, 'user_data')
 os.makedirs(USER_DATA_DIR, exist_ok=True)
 DATA_FILE = os.path.join(USER_DATA_DIR, f"data_{SESSION_ID}.json") if SESSION_ID else os.path.join(BASE_DIR, "data.json")
 PATTERN_FILE = os.path.join(USER_DATA_DIR, f"pattern_{SESSION_ID}.json") if SESSION_ID else os.path.join(BASE_DIR, "pattern.json")
+REGIONS_FILE = os.path.join(USER_DATA_DIR, f"regions_{SESSION_ID}.json") if SESSION_ID else os.path.join(BASE_DIR, "regions.json")
 
 # Generation status marker files (used by Flask /generate/status)
 RUN_MARKER = os.path.join(USER_DATA_DIR, f"generate_{SESSION_ID}.running") if SESSION_ID else os.path.join(BASE_DIR, 'generate.running')
@@ -39,7 +40,8 @@ def draw0(self,x,y,xdist,ydist):
     "rotation": 0,
     "coordinates": (x+xdist+1, y+ydist+1),
     "color_fundo": self.CorFundo,
-    "color_padrao": self.CorPattern
+    "color_padrao": self.CorPattern,
+    "region_id": getattr(self, "region_id", None)
 })
 
 def draw90(self,x,y,xdist,ydist):
@@ -49,7 +51,8 @@ def draw90(self,x,y,xdist,ydist):
     "rotation": 90,
     "coordinates": (x+xdist+1, y+ydist+1),
     "color_fundo": self.CorFundo,
-    "color_padrao": self.CorPattern
+    "color_padrao": self.CorPattern,
+    "region_id": getattr(self, "region_id", None)
 })
 
 def drawsquare_0(self,x,y,xdist,ydist):
@@ -59,7 +62,8 @@ def drawsquare_0(self,x,y,xdist,ydist):
     "rotation": 0,
     "coordinates": (x+xdist+1, y+ydist+1),
     "color_fundo": self.CorFundo,
-    "color_padrao": self.CorPattern
+    "color_padrao": self.CorPattern,
+    "region_id": getattr(self, "region_id", None)
 })
 
 def drawsquare_90(self,x,y,xdist,ydist):
@@ -69,7 +73,8 @@ def drawsquare_90(self,x,y,xdist,ydist):
     "rotation": 90,
     "coordinates": (x+xdist+1, y+ydist+1),
     "color_fundo": self.CorFundo,
-    "color_padrao": self.CorPattern
+    "color_padrao": self.CorPattern,
+    "region_id": getattr(self, "region_id", None)
 })
 
 def drawsquare_180(self,x,y,xdist,ydist):
@@ -79,7 +84,8 @@ def drawsquare_180(self,x,y,xdist,ydist):
     "rotation": 180,
     "coordinates": (x+xdist+1, y+ydist+1),
     "color_fundo": self.CorFundo,
-    "color_padrao": self.CorPattern
+    "color_padrao": self.CorPattern,
+    "region_id": getattr(self, "region_id", None)
 })
 
 def drawsquare_270(self,x,y,xdist,ydist):
@@ -89,11 +95,12 @@ def drawsquare_270(self,x,y,xdist,ydist):
     "rotation": 270,
     "coordinates": (x+xdist+1, y+ydist+1),
     "color_fundo": self.CorFundo,
-    "color_padrao": self.CorPattern
+    "color_padrao": self.CorPattern,
+    "region_id": getattr(self, "region_id", None)
 })
 
 class PatternStyles:
-    def __init__(self,CorFundo,CorPattern,Filletes,patternEssencials,PepeQuad1,PepeQuad2):
+    def __init__(self,CorFundo,CorPattern,Filletes,patternEssencials,PepeQuad1,PepeQuad2, region_id=None):
         self.CorPattern = CorPattern
         self.CorFundo = CorFundo
         self.Filletes = Filletes
@@ -104,8 +111,10 @@ class PatternStyles:
         self.altTela = patternEssencials[3]
         self.PepeQuad1 = PepeQuad1
         self.PepeQuad2 = PepeQuad2
-    def aleluia_triangulos(self):
-        random_pattern = random.randint(1,7)
+        self.region_id = region_id
+        self.chosen_variant = None
+    def aleluia_triangulos(self, variant=None):
+        random_pattern = variant if variant is not None else random.randint(1,7)
         x,y,sizeX,sizeY = self.Filletes[-1]
         Xtimes = int(sizeX / (self.largTela/self.divLarg))
         Ytimes = int(sizeY / (self.altTela/self.divAlt))
@@ -181,8 +190,10 @@ class PatternStyles:
                             draw90(self,x,y,xdist,ydist)
                         else:
                             draw0(self,x,y,xdist,ydist)
-    def aleluia_quadrados(self):
-        random_pattern = random.randint(1,14)
+        self.chosen_variant = random_pattern
+        return random_pattern
+    def aleluia_quadrados(self, variant=None):
+        random_pattern = variant if variant is not None else random.randint(1,14)
         x,y,sizeX,sizeY = self.Filletes[-1]
         Xtimes = int(sizeX / (self.largTela/self.divLarg))
         Ytimes = int(sizeY / (self.altTela/self.divAlt))
@@ -552,6 +563,8 @@ class PatternStyles:
                             drawsquare_90(self,x,y,xdist,ydist)
                         else:
                             drawsquare_270(self,x,y,xdist,ydist)
+        self.chosen_variant = random_pattern
+        return random_pattern
                     
 
 def get_canvas_dimensions():
@@ -690,7 +703,7 @@ class PepeAI:
 
 
 class PepeDrawer:
-    def __init__(self,CorFundo,CorPattern,PepeQuad1,PepeQuad2,ShapeComand):
+    def __init__(self,CorFundo,CorPattern,PepeQuad1,PepeQuad2,ShapeComand, region_id=None):
         self.CorFundo = CorFundo
         self.CorPattern = CorPattern
         self.FirstX,self.FirstY = PepeQuad1
@@ -700,7 +713,8 @@ class PepeDrawer:
         self.largTela = largTela
         self.divAlt = divAlt
         self.divLarg = divLarg
-    def startbyFilette(self):        
+        self.region_id = region_id
+    def startbyFilette(self, variant_override=None):        
         if self.SecX < self.FirstX:
             self.SizeX = (self.FirstX - self.SecX) 
             self.FirstX = self.SecX
@@ -714,14 +728,14 @@ class PepeDrawer:
         self.RealDirectionX = self.SizeX * (self.largTela/self.divLarg)
         self.RealDirectionY = self.SizeY * (self.altTela/self.divAlt)
         Filletes.append((self.FirstX,self.FirstY,self.RealDirectionX,self.RealDirectionY))
-        self.DrawPattern()
-    def DrawPattern(self):
+        return self.DrawPattern(variant_override)
+    def DrawPattern(self, variant_override=None):
         patternEssencials = [self.divLarg,self.divAlt,self.largTela,self.altTela]
-        patrao = PatternStyles(self.CorFundo,self.CorPattern,Filletes,patternEssencials,(self.FirstX,self.FirstY),(self.SecX,self.SecY))
+        patrao = PatternStyles(self.CorFundo,self.CorPattern,Filletes,patternEssencials,(self.FirstX,self.FirstY),(self.SecX,self.SecY), region_id=self.region_id)
         if self.ShapeComand == "aleluia_quadrados":
-            patrao.aleluia_quadrados()    
+            return patrao.aleluia_quadrados(variant_override)
         elif self.ShapeComand == "aleluia_triangulos":
-            patrao.aleluia_triangulos()      
+            return patrao.aleluia_triangulos(variant_override)     
 
 def check_for_touching_colors(self, ADN, NewPepe, a, y, NewNum):
     tester_i = 0
@@ -764,6 +778,7 @@ class StartPepeFunction:
         knob_value = get_knob_value()
         RandomNum = [num + knob_value for num in base_RandomNum]
         x = 0
+        region_counter = 1
         while x < self.divLarg:
             self.Xpoints.append(x)
             NewNum = random.choice(RandomNum)
@@ -782,12 +797,34 @@ class StartPepeFunction:
                     NewNum = self.divAlt - y
                 NewPepe = PepeAI()
                 NewPepe = check_for_touching_colors(self,ADN,NewPepe,a,y,NewNum)
-                newPepitos = PepeDrawer(NewPepe.colorFundo,NewPepe.colorPattern,(self.Xpoints[a-1],y),(self.Xpoints[a],y+NewNum),NewPepe.ShapeComand)
-                newPepitos.startbyFilette()
+                # Compute 1-based bounds
+                x1_1b = self.Xpoints[a-1] + 1
+                x2_1b = self.Xpoints[a]
+                y1_1b = y + 1
+                y2_1b = y + NewNum
+                newPepitos = PepeDrawer(NewPepe.colorFundo,NewPepe.colorPattern,(self.Xpoints[a-1],y),(self.Xpoints[a],y+NewNum),NewPepe.ShapeComand, region_id=region_counter)
+                chosen_variant = newPepitos.startbyFilette()
                 ADN.append((NewPepe.colorFundo,NewPepe.colorPattern,(self.Xpoints[a-1],y),(self.Xpoints[a],y+NewNum),newPepitos.ShapeComand))
+                # Record region metadata
+                region_entry = {
+                    "id": region_counter,
+                    "x1": x1_1b,
+                    "y1": y1_1b,
+                    "x2": x2_1b,
+                    "y2": y2_1b,
+                    "shape": newPepitos.ShapeComand,
+                    "variant": int(chosen_variant) if chosen_variant is not None else None,
+                    "color_fundo": NewPepe.colorFundo,
+                    "color_padrao": NewPepe.colorPattern
+                }
+                REGIONS.append(region_entry)
+                region_counter += 1
                 y = y + NewNum
 
 def draw_pepe(write_to_file=True):
+    # reset regions for a fresh run
+    global REGIONS
+    REGIONS = []
     set_new_colors()
     StartPepeFunction()
     # Collect all non-empty grid values
@@ -809,6 +846,12 @@ def draw_pepe(write_to_file=True):
         # Write the pattern to file, then mark generation done
         with open(PATTERN_FILE, "w") as f:
             json.dump(pattern_data, f, indent=2)
+        # Also write regions metadata
+        try:
+            with open(REGIONS_FILE, "w") as rf:
+                json.dump(REGIONS, rf, indent=2)
+        except Exception:
+            pass
         _mark_generation_done()
         return None
     else:
@@ -835,6 +878,51 @@ def generate(settings=None):
     # Clean up / reset REQUEST_SETTINGS to avoid bleed
     REQUEST_SETTINGS = None
     return pattern
+
+def generate_region(region_id, x1_1b, y1_1b, x2_1b, y2_1b, shape, variant, color_fundo, color_padrao, settings=None):
+    """
+    Generate tiles for a single region (bounds are 1-based inclusive).
+    Returns a flat list of tile dicts with grid_x/y and region_id set.
+    """
+    # Ensure canvas/grid settings align with current data
+    global REQUEST_SETTINGS, gridValues, Filletes
+    prev_settings = REQUEST_SETTINGS
+    REQUEST_SETTINGS = settings or {}
+    # compute grid dims
+    at, lt, da, dl = get_canvas_dimensions()
+    # prepare state
+    gridValues = [[[] for _ in range(da + 2)] for _ in range(dl + 2)]
+    Filletes = []
+    # Convert 1-based bounds back to 0-based for PatternStyles baseline x,y
+    x0 = max(0, int(x1_1b) - 1)
+    y0 = max(0, int(y1_1b) - 1)
+    sizeX_tiles = max(0, int(x2_1b) - int(x1_1b) + 1)
+    sizeY_tiles = max(0, int(y2_1b) - int(y1_1b) + 1)
+    # pixel sizes for fillete
+    realX = sizeX_tiles * (lt / dl)
+    realY = sizeY_tiles * (at / da)
+    Filletes.append((x0, y0, realX, realY))
+    patternEssencials = [dl, da, lt, at]
+    patrao = PatternStyles(color_fundo, color_padrao, Filletes, patternEssencials, (x0, y0), (x0+sizeX_tiles, y0+sizeY_tiles), region_id=region_id)
+    if shape == "aleluia_quadrados":
+        patrao.aleluia_quadrados(variant)
+    else:
+        patrao.aleluia_triangulos(variant)
+    # Flatten just this grid
+    tiles = []
+    for i, col in enumerate(gridValues):
+        for j, cell in enumerate(col):
+            if cell:
+                for entry in cell:
+                    t = dict(entry)
+                    t["grid_x"] = i
+                    t["grid_y"] = j
+                    if "coordinates" in t:
+                        del t["coordinates"]
+                    tiles.append(t)
+    # restore REQUEST_SETTINGS
+    REQUEST_SETTINGS = prev_settings
+    return tiles
 
 if __name__ == '__main__':
     # When run as a script, produce files for backward compatibility

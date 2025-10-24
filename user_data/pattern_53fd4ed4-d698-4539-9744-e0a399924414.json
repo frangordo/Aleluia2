@@ -1,802 +1,227 @@
 [
   {
-    "tile": "Padrao Triangulos",
-    "rotation": 90,
-    "color_fundo": "white",
-    "color_padrao": "black",
+    "tile": "Padrao Quadrado",
+    "rotation": 0,
+    "color_fundo": "#ffffff",
+    "color_padrao": "#7081ff",
+    "region_id": 1,
     "grid_x": 1,
     "grid_y": 1
   },
   {
-    "tile": "Padrao Triangulos",
+    "tile": "Padrao Quadrado",
     "rotation": 90,
-    "color_fundo": "white",
-    "color_padrao": "black",
+    "color_fundo": "#ffffff",
+    "color_padrao": "#7081ff",
+    "region_id": 1,
     "grid_x": 1,
     "grid_y": 2
   },
   {
     "tile": "Padrao Triangulos",
-    "rotation": 90,
-    "color_fundo": "black",
-    "color_padrao": "white",
+    "rotation": 0,
+    "color_fundo": "#3517ab",
+    "color_padrao": "#ff7b24",
+    "region_id": 2,
     "grid_x": 1,
     "grid_y": 3
   },
   {
     "tile": "Padrao Triangulos",
     "rotation": 0,
-    "color_fundo": "black",
-    "color_padrao": "white",
+    "color_fundo": "#3517ab",
+    "color_padrao": "#ff7b24",
+    "region_id": 2,
     "grid_x": 1,
     "grid_y": 4
   },
   {
     "tile": "Padrao Triangulos",
-    "rotation": 90,
-    "color_fundo": "black",
-    "color_padrao": "white",
+    "rotation": 0,
+    "color_fundo": "#bd7ef1",
+    "color_padrao": "#ff66de",
+    "region_id": 3,
     "grid_x": 1,
     "grid_y": 5
-  },
-  {
-    "tile": "Padrao Quadrado",
-    "rotation": 90,
-    "color_fundo": "white",
-    "color_padrao": "black",
-    "grid_x": 1,
-    "grid_y": 6
-  },
-  {
-    "tile": "Padrao Quadrado",
-    "rotation": 90,
-    "color_fundo": "white",
-    "color_padrao": "black",
-    "grid_x": 1,
-    "grid_y": 7
-  },
-  {
-    "tile": "Padrao Triangulos",
-    "rotation": 90,
-    "color_fundo": "white",
-    "color_padrao": "black",
-    "grid_x": 1,
-    "grid_y": 8
-  },
-  {
-    "tile": "Padrao Triangulos",
-    "rotation": 90,
-    "color_fundo": "white",
-    "color_padrao": "black",
-    "grid_x": 1,
-    "grid_y": 9
   },
   {
     "tile": "Padrao Quadrado",
     "rotation": 180,
-    "color_fundo": "white",
-    "color_padrao": "black",
-    "grid_x": 1,
-    "grid_y": 10
-  },
-  {
-    "tile": "Padrao Triangulos",
-    "rotation": 0,
-    "color_fundo": "white",
-    "color_padrao": "black",
+    "color_fundo": "#ffffff",
+    "color_padrao": "#7081ff",
+    "region_id": 1,
     "grid_x": 2,
     "grid_y": 1
   },
   {
-    "tile": "Padrao Triangulos",
-    "rotation": 0,
-    "color_fundo": "white",
-    "color_padrao": "black",
+    "tile": "Padrao Quadrado",
+    "rotation": 90,
+    "color_fundo": "#ffffff",
+    "color_padrao": "#7081ff",
+    "region_id": 1,
     "grid_x": 2,
     "grid_y": 2
   },
   {
     "tile": "Padrao Triangulos",
     "rotation": 0,
-    "color_fundo": "black",
-    "color_padrao": "white",
+    "color_fundo": "#3517ab",
+    "color_padrao": "#ff7b24",
+    "region_id": 2,
     "grid_x": 2,
     "grid_y": 3
   },
   {
     "tile": "Padrao Triangulos",
-    "rotation": 90,
-    "color_fundo": "black",
-    "color_padrao": "white",
+    "rotation": 0,
+    "color_fundo": "#3517ab",
+    "color_padrao": "#ff7b24",
+    "region_id": 2,
     "grid_x": 2,
     "grid_y": 4
   },
   {
     "tile": "Padrao Triangulos",
     "rotation": 0,
-    "color_fundo": "black",
-    "color_padrao": "white",
+    "color_fundo": "#bd7ef1",
+    "color_padrao": "#ff66de",
+    "region_id": 3,
     "grid_x": 2,
     "grid_y": 5
   },
   {
     "tile": "Padrao Quadrado",
-    "rotation": 270,
-    "color_fundo": "white",
-    "color_padrao": "black",
-    "grid_x": 2,
-    "grid_y": 6
-  },
-  {
-    "tile": "Padrao Quadrado",
-    "rotation": 270,
-    "color_fundo": "white",
-    "color_padrao": "black",
-    "grid_x": 2,
-    "grid_y": 7
-  },
-  {
-    "tile": "Padrao Triangulos",
     "rotation": 0,
-    "color_fundo": "white",
-    "color_padrao": "black",
-    "grid_x": 2,
-    "grid_y": 8
-  },
-  {
-    "tile": "Padrao Triangulos",
-    "rotation": 0,
-    "color_fundo": "white",
-    "color_padrao": "black",
-    "grid_x": 2,
-    "grid_y": 9
-  },
-  {
-    "tile": "Padrao Quadrado",
-    "rotation": 0,
-    "color_fundo": "white",
-    "color_padrao": "black",
-    "grid_x": 2,
-    "grid_y": 10
-  },
-  {
-    "tile": "Padrao Triangulos",
-    "rotation": 90,
-    "color_fundo": "white",
-    "color_padrao": "black",
-    "grid_x": 3,
-    "grid_y": 1
-  },
-  {
-    "tile": "Padrao Triangulos",
-    "rotation": 90,
-    "color_fundo": "white",
-    "color_padrao": "black",
-    "grid_x": 3,
-    "grid_y": 2
-  },
-  {
-    "tile": "Padrao Triangulos",
-    "rotation": 90,
-    "color_fundo": "black",
-    "color_padrao": "white",
-    "grid_x": 3,
-    "grid_y": 3
-  },
-  {
-    "tile": "Padrao Triangulos",
-    "rotation": 0,
-    "color_fundo": "black",
-    "color_padrao": "white",
-    "grid_x": 3,
+    "color_fundo": "#3517ab",
+    "color_padrao": "#ffffff",
+    "region_id": 7,
+    "grid_x": 5,
     "grid_y": 4
-  },
-  {
-    "tile": "Padrao Triangulos",
-    "rotation": 90,
-    "color_fundo": "black",
-    "color_padrao": "white",
-    "grid_x": 3,
-    "grid_y": 5
-  },
-  {
-    "tile": "Padrao Quadrado",
-    "rotation": 90,
-    "color_fundo": "white",
-    "color_padrao": "black",
-    "grid_x": 3,
-    "grid_y": 6
-  },
-  {
-    "tile": "Padrao Quadrado",
-    "rotation": 90,
-    "color_fundo": "white",
-    "color_padrao": "black",
-    "grid_x": 3,
-    "grid_y": 7
-  },
-  {
-    "tile": "Padrao Triangulos",
-    "rotation": 90,
-    "color_fundo": "white",
-    "color_padrao": "black",
-    "grid_x": 3,
-    "grid_y": 8
-  },
-  {
-    "tile": "Padrao Triangulos",
-    "rotation": 90,
-    "color_fundo": "white",
-    "color_padrao": "black",
-    "grid_x": 3,
-    "grid_y": 9
   },
   {
     "tile": "Padrao Quadrado",
     "rotation": 180,
-    "color_fundo": "white",
-    "color_padrao": "black",
+    "color_fundo": "#3517ab",
+    "color_padrao": "#ffffff",
+    "region_id": 7,
+    "grid_x": 5,
+    "grid_y": 5
+  },
+  {
+    "tile": "Padrao Quadrado",
+    "rotation": 0,
+    "color_fundo": "#007EA7",
+    "color_padrao": "#7081ff",
+    "region_id": 5,
     "grid_x": 3,
-    "grid_y": 10
+    "grid_y": 4
   },
   {
-    "tile": "Padrao Triangulos",
-    "rotation": 90,
-    "color_fundo": "white",
-    "color_padrao": "black",
-    "grid_x": 4,
-    "grid_y": 1
-  },
-  {
-    "tile": "Padrao Triangulos",
-    "rotation": 90,
-    "color_fundo": "white",
-    "color_padrao": "black",
-    "grid_x": 4,
-    "grid_y": 2
-  },
-  {
-    "tile": "Padrao Triangulos",
+    "tile": "Padrao Quadrado",
     "rotation": 0,
-    "color_fundo": "black",
-    "color_padrao": "white",
-    "grid_x": 4,
-    "grid_y": 3
+    "color_fundo": "#007EA7",
+    "color_padrao": "#7081ff",
+    "region_id": 5,
+    "grid_x": 3,
+    "grid_y": 5
   },
   {
-    "tile": "Padrao Triangulos",
-    "rotation": 90,
-    "color_fundo": "black",
-    "color_padrao": "white",
+    "tile": "Padrao Quadrado",
+    "rotation": 0,
+    "color_fundo": "#007EA7",
+    "color_padrao": "#7081ff",
+    "region_id": 5,
     "grid_x": 4,
     "grid_y": 4
   },
   {
-    "tile": "Padrao Triangulos",
+    "tile": "Padrao Quadrado",
     "rotation": 0,
-    "color_fundo": "black",
-    "color_padrao": "white",
+    "color_fundo": "#007EA7",
+    "color_padrao": "#7081ff",
+    "region_id": 5,
     "grid_x": 4,
     "grid_y": 5
   },
   {
     "tile": "Padrao Triangulos",
     "rotation": 90,
-    "color_fundo": "black",
-    "color_padrao": "white",
+    "color_fundo": "#fcff4d",
+    "color_padrao": "#f98686",
+    "region_id": 4,
+    "grid_x": 3,
+    "grid_y": 1
+  },
+  {
+    "tile": "Padrao Triangulos",
+    "rotation": 0,
+    "color_fundo": "#fcff4d",
+    "color_padrao": "#f98686",
+    "region_id": 4,
+    "grid_x": 3,
+    "grid_y": 2
+  },
+  {
+    "tile": "Padrao Triangulos",
+    "rotation": 90,
+    "color_fundo": "#fcff4d",
+    "color_padrao": "#f98686",
+    "region_id": 4,
+    "grid_x": 3,
+    "grid_y": 3
+  },
+  {
+    "tile": "Padrao Triangulos",
+    "rotation": 90,
+    "color_fundo": "#fcff4d",
+    "color_padrao": "#f98686",
+    "region_id": 4,
     "grid_x": 4,
-    "grid_y": 6
+    "grid_y": 1
   },
   {
     "tile": "Padrao Triangulos",
     "rotation": 0,
-    "color_fundo": "black",
-    "color_padrao": "white",
+    "color_fundo": "#fcff4d",
+    "color_padrao": "#f98686",
+    "region_id": 4,
     "grid_x": 4,
-    "grid_y": 7
+    "grid_y": 2
   },
   {
     "tile": "Padrao Triangulos",
-    "rotation": 0,
-    "color_fundo": "white",
-    "color_padrao": "black",
+    "rotation": 90,
+    "color_fundo": "#fcff4d",
+    "color_padrao": "#f98686",
+    "region_id": 4,
     "grid_x": 4,
-    "grid_y": 8
+    "grid_y": 3
   },
   {
     "tile": "Padrao Triangulos",
     "rotation": 0,
-    "color_fundo": "white",
-    "color_padrao": "black",
-    "grid_x": 4,
-    "grid_y": 9
-  },
-  {
-    "tile": "Padrao Quadrado",
-    "rotation": 90,
-    "color_fundo": "black",
-    "color_padrao": "white",
-    "grid_x": 4,
-    "grid_y": 10
-  },
-  {
-    "tile": "Padrao Triangulos",
-    "rotation": 90,
-    "color_fundo": "white",
-    "color_padrao": "black",
+    "color_fundo": "#ff66de",
+    "color_padrao": "#f98686",
+    "region_id": 6,
     "grid_x": 5,
     "grid_y": 1
   },
   {
     "tile": "Padrao Triangulos",
-    "rotation": 90,
-    "color_fundo": "white",
-    "color_padrao": "black",
+    "rotation": 0,
+    "color_fundo": "#ff66de",
+    "color_padrao": "#f98686",
+    "region_id": 6,
     "grid_x": 5,
     "grid_y": 2
   },
   {
     "tile": "Padrao Triangulos",
     "rotation": 0,
-    "color_fundo": "black",
-    "color_padrao": "white",
+    "color_fundo": "#ff66de",
+    "color_padrao": "#f98686",
+    "region_id": 6,
     "grid_x": 5,
     "grid_y": 3
-  },
-  {
-    "tile": "Padrao Triangulos",
-    "rotation": 90,
-    "color_fundo": "black",
-    "color_padrao": "white",
-    "grid_x": 5,
-    "grid_y": 4
-  },
-  {
-    "tile": "Padrao Triangulos",
-    "rotation": 0,
-    "color_fundo": "black",
-    "color_padrao": "white",
-    "grid_x": 5,
-    "grid_y": 5
-  },
-  {
-    "tile": "Padrao Triangulos",
-    "rotation": 90,
-    "color_fundo": "black",
-    "color_padrao": "white",
-    "grid_x": 5,
-    "grid_y": 6
-  },
-  {
-    "tile": "Padrao Triangulos",
-    "rotation": 0,
-    "color_fundo": "black",
-    "color_padrao": "white",
-    "grid_x": 5,
-    "grid_y": 7
-  },
-  {
-    "tile": "Padrao Triangulos",
-    "rotation": 0,
-    "color_fundo": "white",
-    "color_padrao": "black",
-    "grid_x": 5,
-    "grid_y": 8
-  },
-  {
-    "tile": "Padrao Triangulos",
-    "rotation": 0,
-    "color_fundo": "white",
-    "color_padrao": "black",
-    "grid_x": 5,
-    "grid_y": 9
-  },
-  {
-    "tile": "Padrao Quadrado",
-    "rotation": 90,
-    "color_fundo": "black",
-    "color_padrao": "white",
-    "grid_x": 5,
-    "grid_y": 10
-  },
-  {
-    "tile": "Padrao Quadrado",
-    "rotation": 0,
-    "color_fundo": "black",
-    "color_padrao": "white",
-    "grid_x": 6,
-    "grid_y": 1
-  },
-  {
-    "tile": "Padrao Quadrado",
-    "rotation": 90,
-    "color_fundo": "black",
-    "color_padrao": "white",
-    "grid_x": 6,
-    "grid_y": 2
-  },
-  {
-    "tile": "Padrao Quadrado",
-    "rotation": 0,
-    "color_fundo": "black",
-    "color_padrao": "white",
-    "grid_x": 6,
-    "grid_y": 3
-  },
-  {
-    "tile": "Padrao Triangulos",
-    "rotation": 90,
-    "color_fundo": "black",
-    "color_padrao": "white",
-    "grid_x": 6,
-    "grid_y": 4
-  },
-  {
-    "tile": "Padrao Triangulos",
-    "rotation": 90,
-    "color_fundo": "black",
-    "color_padrao": "white",
-    "grid_x": 6,
-    "grid_y": 5
-  },
-  {
-    "tile": "Padrao Triangulos",
-    "rotation": 90,
-    "color_fundo": "black",
-    "color_padrao": "white",
-    "grid_x": 6,
-    "grid_y": 6
-  },
-  {
-    "tile": "Padrao Triangulos",
-    "rotation": 0,
-    "color_fundo": "black",
-    "color_padrao": "white",
-    "grid_x": 6,
-    "grid_y": 7
-  },
-  {
-    "tile": "Padrao Triangulos",
-    "rotation": 90,
-    "color_fundo": "black",
-    "color_padrao": "white",
-    "grid_x": 6,
-    "grid_y": 8
-  },
-  {
-    "tile": "Padrao Triangulos",
-    "rotation": 0,
-    "color_fundo": "black",
-    "color_padrao": "white",
-    "grid_x": 6,
-    "grid_y": 9
-  },
-  {
-    "tile": "Padrao Triangulos",
-    "rotation": 0,
-    "color_fundo": "white",
-    "color_padrao": "black",
-    "grid_x": 6,
-    "grid_y": 10
-  },
-  {
-    "tile": "Padrao Quadrado",
-    "rotation": 180,
-    "color_fundo": "black",
-    "color_padrao": "white",
-    "grid_x": 7,
-    "grid_y": 1
-  },
-  {
-    "tile": "Padrao Quadrado",
-    "rotation": 90,
-    "color_fundo": "black",
-    "color_padrao": "white",
-    "grid_x": 7,
-    "grid_y": 2
-  },
-  {
-    "tile": "Padrao Quadrado",
-    "rotation": 180,
-    "color_fundo": "black",
-    "color_padrao": "white",
-    "grid_x": 7,
-    "grid_y": 3
-  },
-  {
-    "tile": "Padrao Triangulos",
-    "rotation": 90,
-    "color_fundo": "black",
-    "color_padrao": "white",
-    "grid_x": 7,
-    "grid_y": 4
-  },
-  {
-    "tile": "Padrao Triangulos",
-    "rotation": 90,
-    "color_fundo": "black",
-    "color_padrao": "white",
-    "grid_x": 7,
-    "grid_y": 5
-  },
-  {
-    "tile": "Padrao Triangulos",
-    "rotation": 90,
-    "color_fundo": "black",
-    "color_padrao": "white",
-    "grid_x": 7,
-    "grid_y": 6
-  },
-  {
-    "tile": "Padrao Triangulos",
-    "rotation": 0,
-    "color_fundo": "black",
-    "color_padrao": "white",
-    "grid_x": 7,
-    "grid_y": 7
-  },
-  {
-    "tile": "Padrao Triangulos",
-    "rotation": 90,
-    "color_fundo": "black",
-    "color_padrao": "white",
-    "grid_x": 7,
-    "grid_y": 8
-  },
-  {
-    "tile": "Padrao Triangulos",
-    "rotation": 0,
-    "color_fundo": "black",
-    "color_padrao": "white",
-    "grid_x": 7,
-    "grid_y": 9
-  },
-  {
-    "tile": "Padrao Triangulos",
-    "rotation": 0,
-    "color_fundo": "white",
-    "color_padrao": "black",
-    "grid_x": 7,
-    "grid_y": 10
-  },
-  {
-    "tile": "Padrao Triangulos",
-    "rotation": 0,
-    "color_fundo": "black",
-    "color_padrao": "white",
-    "grid_x": 8,
-    "grid_y": 1
-  },
-  {
-    "tile": "Padrao Triangulos",
-    "rotation": 90,
-    "color_fundo": "black",
-    "color_padrao": "white",
-    "grid_x": 8,
-    "grid_y": 2
-  },
-  {
-    "tile": "Padrao Triangulos",
-    "rotation": 0,
-    "color_fundo": "black",
-    "color_padrao": "white",
-    "grid_x": 8,
-    "grid_y": 3
-  },
-  {
-    "tile": "Padrao Quadrado",
-    "rotation": 0,
-    "color_fundo": "white",
-    "color_padrao": "black",
-    "grid_x": 8,
-    "grid_y": 4
-  },
-  {
-    "tile": "Padrao Quadrado",
-    "rotation": 0,
-    "color_fundo": "white",
-    "color_padrao": "black",
-    "grid_x": 8,
-    "grid_y": 5
-  },
-  {
-    "tile": "Padrao Quadrado",
-    "rotation": 0,
-    "color_fundo": "white",
-    "color_padrao": "black",
-    "grid_x": 8,
-    "grid_y": 6
-  },
-  {
-    "tile": "Padrao Triangulos",
-    "rotation": 90,
-    "color_fundo": "black",
-    "color_padrao": "white",
-    "grid_x": 8,
-    "grid_y": 7
-  },
-  {
-    "tile": "Padrao Triangulos",
-    "rotation": 0,
-    "color_fundo": "black",
-    "color_padrao": "white",
-    "grid_x": 8,
-    "grid_y": 8
-  },
-  {
-    "tile": "Padrao Triangulos",
-    "rotation": 90,
-    "color_fundo": "black",
-    "color_padrao": "white",
-    "grid_x": 8,
-    "grid_y": 9
-  },
-  {
-    "tile": "Padrao Quadrado",
-    "rotation": 0,
-    "color_fundo": "white",
-    "color_padrao": "black",
-    "grid_x": 8,
-    "grid_y": 10
-  },
-  {
-    "tile": "Padrao Triangulos",
-    "rotation": 0,
-    "color_fundo": "black",
-    "color_padrao": "white",
-    "grid_x": 9,
-    "grid_y": 1
-  },
-  {
-    "tile": "Padrao Triangulos",
-    "rotation": 90,
-    "color_fundo": "black",
-    "color_padrao": "white",
-    "grid_x": 9,
-    "grid_y": 2
-  },
-  {
-    "tile": "Padrao Triangulos",
-    "rotation": 0,
-    "color_fundo": "black",
-    "color_padrao": "white",
-    "grid_x": 9,
-    "grid_y": 3
-  },
-  {
-    "tile": "Padrao Quadrado",
-    "rotation": 0,
-    "color_fundo": "white",
-    "color_padrao": "black",
-    "grid_x": 9,
-    "grid_y": 4
-  },
-  {
-    "tile": "Padrao Quadrado",
-    "rotation": 0,
-    "color_fundo": "white",
-    "color_padrao": "black",
-    "grid_x": 9,
-    "grid_y": 5
-  },
-  {
-    "tile": "Padrao Quadrado",
-    "rotation": 0,
-    "color_fundo": "white",
-    "color_padrao": "black",
-    "grid_x": 9,
-    "grid_y": 6
-  },
-  {
-    "tile": "Padrao Triangulos",
-    "rotation": 0,
-    "color_fundo": "black",
-    "color_padrao": "white",
-    "grid_x": 9,
-    "grid_y": 7
-  },
-  {
-    "tile": "Padrao Triangulos",
-    "rotation": 90,
-    "color_fundo": "black",
-    "color_padrao": "white",
-    "grid_x": 9,
-    "grid_y": 8
-  },
-  {
-    "tile": "Padrao Triangulos",
-    "rotation": 0,
-    "color_fundo": "black",
-    "color_padrao": "white",
-    "grid_x": 9,
-    "grid_y": 9
-  },
-  {
-    "tile": "Padrao Quadrado",
-    "rotation": 180,
-    "color_fundo": "white",
-    "color_padrao": "black",
-    "grid_x": 9,
-    "grid_y": 10
-  },
-  {
-    "tile": "Padrao Triangulos",
-    "rotation": 0,
-    "color_fundo": "black",
-    "color_padrao": "white",
-    "grid_x": 10,
-    "grid_y": 1
-  },
-  {
-    "tile": "Padrao Triangulos",
-    "rotation": 90,
-    "color_fundo": "black",
-    "color_padrao": "white",
-    "grid_x": 10,
-    "grid_y": 2
-  },
-  {
-    "tile": "Padrao Triangulos",
-    "rotation": 0,
-    "color_fundo": "black",
-    "color_padrao": "white",
-    "grid_x": 10,
-    "grid_y": 3
-  },
-  {
-    "tile": "Padrao Quadrado",
-    "rotation": 0,
-    "color_fundo": "white",
-    "color_padrao": "black",
-    "grid_x": 10,
-    "grid_y": 4
-  },
-  {
-    "tile": "Padrao Quadrado",
-    "rotation": 0,
-    "color_fundo": "white",
-    "color_padrao": "black",
-    "grid_x": 10,
-    "grid_y": 5
-  },
-  {
-    "tile": "Padrao Quadrado",
-    "rotation": 0,
-    "color_fundo": "white",
-    "color_padrao": "black",
-    "grid_x": 10,
-    "grid_y": 6
-  },
-  {
-    "tile": "Padrao Triangulos",
-    "rotation": 90,
-    "color_fundo": "black",
-    "color_padrao": "white",
-    "grid_x": 10,
-    "grid_y": 7
-  },
-  {
-    "tile": "Padrao Triangulos",
-    "rotation": 0,
-    "color_fundo": "black",
-    "color_padrao": "white",
-    "grid_x": 10,
-    "grid_y": 8
-  },
-  {
-    "tile": "Padrao Triangulos",
-    "rotation": 90,
-    "color_fundo": "black",
-    "color_padrao": "white",
-    "grid_x": 10,
-    "grid_y": 9
-  },
-  {
-    "tile": "Padrao Quadrado",
-    "rotation": 0,
-    "color_fundo": "white",
-    "color_padrao": "black",
-    "grid_x": 10,
-    "grid_y": 10
   }
 ]
