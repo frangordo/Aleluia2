@@ -709,8 +709,9 @@
           // If we still can't save (very large single entry), fall back to empty history
           if (patternHistory.length <= 1) {
             try {
+              // As a last resort, persist an empty history, but do not change the in-memory
+              // historyIndex here so the current view remains stable.
               localStorage.setItem('patternHistory', JSON.stringify([]));
-              historyIndex = -1;
             } catch (err) {
               // give up silently; nothing more we can do in localStorage
               console.warn('saveHistory: unable to persist even minimal history', err);
@@ -847,9 +848,11 @@
         if (patternHistory.length > 100) {
           patternHistory = patternHistory.slice(patternHistory.length - 100);
         }
-        historyIndex = patternHistory.length - 1;
-        saveHistory();
-        drawPatternFromHistory(historyIndex);
+  // Move draw before save so UI updates immediately even if localStorage is slow or fails
+  historyIndex = patternHistory.length - 1;
+  drawPatternFromHistory(historyIndex);
+  // Persist history best-effort (may evict older entries on quota pressure)
+  saveHistory();
       } finally {
         isGenerationInProgress = false;
         generateBtn.disabled = false;

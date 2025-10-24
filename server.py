@@ -103,7 +103,12 @@ def pattern():
     sid = _session_id_from_request()
     p = _pattern_path_for(sid)
     if os.path.exists(p):
-        return send_file(p, mimetype='application/json')
+        resp = send_file(p, mimetype='application/json')
+        # Avoid client/proxy caching of the current pattern
+        resp.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+        resp.headers['Pragma'] = 'no-cache'
+        resp.headers['Expires'] = '0'
+        return resp
     # If no per-session pattern, return empty array to keep client happy
     return jsonify([])
 
@@ -121,9 +126,18 @@ def data_json():
         sid = _session_id_from_request()
         p = _data_path_for(sid)
         if os.path.exists(p):
-            return send_file(p, mimetype='application/json')
+            resp = send_file(p, mimetype='application/json')
+            # Avoid caching user-specific data.json
+            resp.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+            resp.headers['Pragma'] = 'no-cache'
+            resp.headers['Expires'] = '0'
+            return resp
         # fallback to global data.json if user-specific doesn't exist
-        return send_from_directory('.', 'data.json')
+        resp = send_from_directory('.', 'data.json')
+        resp.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+        resp.headers['Pragma'] = 'no-cache'
+        resp.headers['Expires'] = '0'
+        return resp
 
 @app.route('/generate', methods=['POST'])
 def generate():
