@@ -5,6 +5,18 @@ import sys
 import uuid
 import time
 import json
+import threading
+from concurrent.futures import ThreadPoolExecutor
+
+# Optional speed-ups (safe fallbacks if unavailable)
+try:
+    import orjson as _orjson  # ultra-fast json
+except Exception:
+    _orjson = None
+try:
+    from flask_compress import Compress as _FlaskCompress
+except Exception:
+    _FlaskCompress = None
 
 # For region-level editing, import helpers from PepesMachine
 try:
@@ -17,6 +29,10 @@ os.makedirs(USER_DATA_DIR, exist_ok=True)
 
 # Serve the dedicated ./static folder under the URL path /static
 app = Flask(__name__, static_folder='static')
+
+# Enable gzip compression for JSON where supported (no-op if package missing)
+if _FlaskCompress is not None:
+    _FlaskCompress(app)
 
 
 
@@ -84,6 +100,181 @@ def cleanup_user_data(max_bytes=USER_DATA_MAX_BYTES, max_files=USER_DATA_MAX_FIL
 # Insert calls in the relevant handlers below:
 
 
+# -------- JSON helpers (use orjson when available) --------
+def _json_load_file(path, default=None):
+    try:
+        with open(path, 'rb') as f:
+            data = f.read()
+        if _orjson is not None:
+            return _orjson.loads(data)
+        return json.loads(data.decode('utf-8'))
+    except Exception:
+        return default
+
+
+def _json_dump_file(obj, path):
+    try:
+        if _orjson is not None:
+            data = _orjson.dumps(obj, option=_orjson.OPT_NON_STR_KEYS)
+        else:
+            data = json.dumps(obj, separators=(',', ':'), ensure_ascii=False).encode('utf-8')
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, 'wb') as f:
+            f.write(data)
+        return True
+    except Exception as e:
+        print("json dump error:", e)
+        return False
+
+
+# -------- Generation Job Manager (per-session, last-write-wins) --------
+_pm_global_lock = threading.Lock()  # serialize in-process generation (pm has module-level globals)
+_job_states = {}  # sid -> { 'version': int, 'running': bool }
+_job_states_lock = threading.Lock()
+_executor = ThreadPoolExecutor(max_workers=1)  # single worker due to pm global state
+
+
+def _pattern_path_for(sid):
+    if not sid:
+        return os.path.join(os.path.dirname(__file__), 'pattern.json')
+    return os.path.join(USER_DATA_DIR, f"pattern_{sid}.json")
+
+
+def _regions_path_for(sid):
+    if not sid:
+        return os.path.join(os.path.dirname(__file__), 'regions.json')
+    return os.path.join(USER_DATA_DIR, f"regions_{sid}.json")
+
+
+def _data_path_for(sid):
+    if not sid:
+        return os.path.join(os.path.dirname(__file__), 'data.json')
+    return os.path.join(USER_DATA_DIR, f"data_{sid}.json")
+
+
+def _run_marker_for(sid):
+    return os.path.join(USER_DATA_DIR, f"generate_{sid}.running") if sid else os.path.join(os.path.dirname(__file__), 'generate.running')
+
+
+def _done_marker_for(sid):
+    return os.path.join(USER_DATA_DIR, f"generate_{sid}.done") if sid else os.path.join(os.path.dirname(__file__), 'generate.done')
+
+
+def _ensure_running_marker(sid):
+    run_marker = _run_marker_for(sid)
+    try:
+        with open(run_marker, 'w') as f:
+            f.write(str(time.time()))
+    except Exception:
+        pass
+
+
+def _remove_done_marker(sid):
+    done_marker = _done_marker_for(sid)
+    try:
+        if os.path.exists(done_marker):
+            os.remove(done_marker)
+    except Exception:
+        pass
+
+
+def _mark_done_and_clear_running(sid):
+    run_marker = _run_marker_for(sid)
+    done_marker = _done_marker_for(sid)
+    try:
+        with open(done_marker, 'w') as f:
+            f.write(str(time.time()))
+    except Exception:
+        pass
+    try:
+        if os.path.exists(run_marker):
+            os.remove(run_marker)
+    except Exception:
+        pass
+
+
+def _get_or_create_job_state(sid):
+    with _job_states_lock:
+        st = _job_states.get(sid)
+        if st is None:
+            st = {'version': 0, 'running': False}
+            _job_states[sid] = st
+        return st
+
+
+def _worker_generate_latest(sid):
+    """Generate pattern for the latest requested version; coalesce intermediate requests.
+    Writes pattern/regions files and done marker only for the latest version.
+    """
+    st = _get_or_create_job_state(sid)
+    try:
+        while True:
+            with _job_states_lock:
+                version_to_run = st['version']
+                st['running'] = True
+            # show running state early
+            _remove_done_marker(sid)
+            _ensure_running_marker(sid)
+
+            # Load current settings from data.json (authoritative)
+            data_path = _data_path_for(sid)
+            settings = _json_load_file(data_path, {})
+
+            # Optional: cleanup before heavy work
+            cleanup_user_data()
+
+            # Perform in-process generation under a global lock (pm has globals)
+            with _pm_global_lock:
+                try:
+                    pattern = pm.generate(settings=settings) if pm is not None else None
+                    regions = getattr(pm, 'REGIONS', []) if pm is not None else []
+                except Exception as e:
+                    print("in-process generate failed:", e)
+                    # On failure, clear running marker (keep idle state)
+                    try:
+                        run_marker = _run_marker_for(sid)
+                        if os.path.exists(run_marker):
+                            os.remove(run_marker)
+                    except Exception:
+                        pass
+                    return
+
+            # If a newer request arrived while we were computing, loop again (discard this result)
+            with _job_states_lock:
+                if st['version'] != version_to_run:
+                    # Another request superseded this run
+                    continue
+
+            # Write outputs atomically for this session
+            pattern_path = _pattern_path_for(sid)
+            regions_path = _regions_path_for(sid)
+            _json_dump_file(pattern or [], pattern_path)
+            _json_dump_file(regions or [], regions_path)
+
+            # Mark done and clean up
+            _mark_done_and_clear_running(sid)
+            cleanup_user_data()
+
+            # If no newer request since we started, we can exit; else loop to serve the latest
+            with _job_states_lock:
+                if st['version'] == version_to_run:
+                    st['running'] = False
+                    break
+                # else: run again (st['running'] stays True)
+    finally:
+        with _job_states_lock:
+            st['running'] = False
+
+
+def _schedule_generate(sid):
+    st = _get_or_create_job_state(sid)
+    with _job_states_lock:
+        st['version'] += 1
+        should_start = not st['running']
+    if should_start:
+        _executor.submit(_worker_generate_latest, sid)
+
+
 def _session_id_from_request():
     sid = request.cookies.get('session_id')
     # If none, return None so we can fall back to global files
@@ -145,6 +336,8 @@ def data_json():
         os.makedirs(os.path.dirname(p), exist_ok=True)
         with open(p, 'w') as f:
             f.write(request.data.decode('utf-8'))
+        # opportunistic cleanup after user write
+        cleanup_user_data()
         return jsonify({"status": "ok"})
     else:
         sid = _session_id_from_request()
@@ -165,36 +358,41 @@ def data_json():
 
 @app.route('/generate', methods=['POST'])
 def generate():
-    # Run PepesMachine.py
+    # Run generation for this session (prefer in-process fast path; fallback to subprocess)
     sid = _session_id_from_request()
+
+    # Optimistic cleanup to avoid disk pressure
+    cleanup_user_data()
+
+    if pm is not None:
+        # Coalesced in-process generation using a worker
+        _remove_done_marker(sid)
+        _ensure_running_marker(sid)
+        _schedule_generate(sid)
+        return jsonify({"status": "started"})
+
+    # Fallback: spawn subprocess (legacy behavior)
     env = dict(os.environ)
     if sid:
         env['SESSION_ID'] = sid
-    # Start generation in a background process so the request returns quickly.
-    # We create a '.running' marker file so clients can poll for status.
-    run_marker = os.path.join(USER_DATA_DIR, f"generate_{sid}.running") if sid else os.path.join(os.path.dirname(__file__), 'generate.running')
-    done_marker = os.path.join(USER_DATA_DIR, f"generate_{sid}.done") if sid else os.path.join(os.path.dirname(__file__), 'generate.done')
+    run_marker = _run_marker_for(sid)
+    done_marker = _done_marker_for(sid)
     try:
-        # remove old done marker if present
         if os.path.exists(done_marker):
             os.remove(done_marker)
     except Exception:
         pass
     try:
-        # touch running marker
         with open(run_marker, 'w') as f:
             f.write(str(time.time()))
     except Exception:
         pass
 
-    # Launch child detached
     python = sys.executable
     script = os.path.join(os.path.dirname(__file__), 'PepesMachine.py')
-    # on Windows, creationflags can be used to detach; subprocess.Popen is sufficient here
     try:
         subprocess.Popen([python, script], env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     except Exception as e:
-        # fallback to blocking run if spawn fails
         try:
             subprocess.run([python, script], env=env)
         except Exception:
