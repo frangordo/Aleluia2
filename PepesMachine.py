@@ -859,7 +859,7 @@ def draw_pepe(write_to_file=True):
          return pattern_data
 
 
-def generate(settings=None):
+def generate(settings=None, seed=None):
     """
     Minimal adapter for Flask:
       - settings: dict (same structure previously stored in data.json)
@@ -871,6 +871,12 @@ def generate(settings=None):
     Filletes = []
     ADN = []
     set_new_colors()
+    # Apply deterministic seed if provided
+    if seed is not None:
+        try:
+            random.seed(int(seed))
+        except Exception:
+            pass
     # Ensure gridValues exists and is cleared by StartPepeFunction, but set to empty here
     gridValues = {}
     # Run generator but ask it to return data instead of writing files
@@ -879,7 +885,7 @@ def generate(settings=None):
     REQUEST_SETTINGS = None
     return pattern
 
-def generate_region(region_id, x1_1b, y1_1b, x2_1b, y2_1b, shape, variant, color_fundo, color_padrao, settings=None):
+def generate_region(region_id, x1_1b, y1_1b, x2_1b, y2_1b, shape, variant, color_fundo, color_padrao, settings=None, seed=None):
     """
     Generate tiles for a single region (bounds are 1-based inclusive).
     Returns a flat list of tile dicts with grid_x/y and region_id set.
@@ -888,6 +894,12 @@ def generate_region(region_id, x1_1b, y1_1b, x2_1b, y2_1b, shape, variant, color
     global REQUEST_SETTINGS, gridValues, Filletes
     prev_settings = REQUEST_SETTINGS
     REQUEST_SETTINGS = settings or {}
+    # Deterministic seed (prefer provided, else derive from region)
+    if seed is not None:
+        try:
+            random.seed(int(seed))
+        except Exception:
+            pass
     # compute grid dims
     at, lt, da, dl = get_canvas_dimensions()
     # prepare state

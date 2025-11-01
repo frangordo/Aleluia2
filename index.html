@@ -295,6 +295,40 @@
       animation: spin 0.8s linear infinite;
     }
     @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+    /* Toast notifications */
+    .toast-container {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      z-index: 2000;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      pointer-events: none;
+    }
+    .toast {
+      min-width: 260px;
+      max-width: 80vw;
+      padding: 10px 14px;
+      border-radius: 10px;
+      box-shadow: 0 6px 22px rgba(0,0,0,0.18);
+      font-family: "Rajdhani", sans-serif;
+      font-weight: 600;
+      letter-spacing: 0.2px;
+      backdrop-filter: blur(4px);
+      pointer-events: auto;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      animation: toastIn 180ms ease forwards;
+    }
+    .toast.info { background: linear-gradient(180deg, #eef6ffdd, #e8f1ffcc); border: 1px solid #81b6ff66; color: #0b2b66; }
+    .toast.success { background: linear-gradient(180deg, #eaffefdd, #e2ffe9cc); border: 1px solid #6ad18a66; color: #0b3d1f; }
+    .toast.error { background: linear-gradient(180deg, #ffececdd, #ffe8e8cc); border: 1px solid #f1999966; color: #5b1010; }
+    .toast .close { margin-left: auto; cursor: pointer; opacity: 0.6; }
+    .toast .close:hover { opacity: 1; }
+    @keyframes toastIn { from { transform: translateY(-6px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
   </style>
 </head>
 <body>
@@ -374,6 +408,7 @@
       </form>
     </div>
   </div>
+  <div class="toast-container" id="toastContainer" aria-live="polite" aria-atomic="true"></div>
   <script>
     // Default button colors (will be used as fallback and initial palette)
     const DEFAULT_BUTTON_COLORS = [
@@ -398,6 +433,7 @@
     // Helper to load JSON
     async function loadJSON(url) {
       const resp = await fetch(url, { credentials: 'same-origin' });
+      if (!resp.ok) throw new Error(`Failed to fetch ${url}: ${resp.status}`);
       return await resp.json();
     }
 
@@ -512,6 +548,7 @@
         } catch (e) {
           // ignore save error; UI still usable
           console.warn('Failed to persist normalized data', e);
+          showToast('Could not save normalized settings (using defaults).', 'error');
         }
       }
     }
@@ -555,33 +592,38 @@
       });
     }
 
-    // Drawing logic (unchanged)
+    // Drawing logic (optimized with Path2D cache and viewport-aware backing size)
     function resolveColor(c) {
       if (!c) return "#000";
       return c;
     }
+    // Prebuilt normalized paths in [0,1]x[0,1] space
+    const PATH_CACHE = (function(){
+      const tri = new Path2D();
+      tri.moveTo(0,0); tri.lineTo(1,0); tri.lineTo(0,1); tri.closePath();
+      const half = new Path2D();
+      half.rect(0,0,0.5,1);
+      return { triangle: tri, halfRect: half };
+    })();
 
     function drawTile(ctx, tile, x, y, size) {
-      ctx.save();
-      ctx.translate(x + size/2, y + size/2);
-      ctx.rotate((tile.rotation || 0) * Math.PI / 180);
-      ctx.translate(-size/2, -size/2);
-
-      // Background
+      // Background (fast fill)
       ctx.fillStyle = resolveColor(tile.color_fundo);
-      ctx.fillRect(0, 0, size, size);
+      ctx.fillRect(x, y, size, size);
 
+      // Foreground using cached Path2D with transform
+      ctx.save();
+      // translate to center, apply rotation, then scale normalized path to size
+      ctx.translate(x + size/2, y + size/2);
+      const ang = (tile.rotation || 0) * Math.PI / 180;
+      if (ang) ctx.rotate(ang);
+      ctx.translate(-size/2, -size/2);
+      ctx.scale(size, size); // scale from unit space
+      ctx.fillStyle = resolveColor(tile.color_padrao);
       if (tile.tile === "Padrao Quadrado") {
-        ctx.fillStyle = resolveColor(tile.color_padrao);
-        ctx.fillRect(0, 0, size/2, size);
+        ctx.fill(PATH_CACHE.halfRect);
       } else if (tile.tile === "Padrao Triangulos") {
-        ctx.beginPath();
-        ctx.moveTo(0, 0);
-        ctx.lineTo(size, 0);
-        ctx.lineTo(0, size);
-        ctx.closePath();
-        ctx.fillStyle = resolveColor(tile.color_padrao);
-        ctx.fill();
+        ctx.fill(PATH_CACHE.triangle);
       }
       ctx.restore();
     }
@@ -609,7 +651,7 @@
       return { width: newW, height: newH, scale: scale };
     }
 
-    // Helper: keep large intrinsic canvas but scale the displayed size to fit the screen
+  // Helper: keep large intrinsic canvas but scale the displayed size to fit the screen
     function applyCanvasDisplaySize(canvas, intrinsicW, intrinsicH) {
       // how much of the patternArea viewport we allow the canvas to use
       const patternArea = document.getElementById('patternArea');
@@ -635,6 +677,24 @@
       canvas.dataset.displayScale = scale;
     }
 
+    // Compute an optimal backing-buffer size so we don't render more pixels than are visible.
+    function computeBackingSize(intrinsicW, intrinsicH) {
+      const patternArea = document.getElementById('patternArea');
+      const areaRect = patternArea ? patternArea.getBoundingClientRect() : { width: window.innerWidth, height: window.innerHeight };
+      const controlsEl = document.getElementById('controls');
+      const controlsRect = controlsEl ? controlsEl.getBoundingClientRect() : { height: 0 };
+      const reserved = Math.max(12, Math.round(controlsRect.height));
+      const maxViewportWidth = Math.max(1, areaRect.width - 16);
+      const maxViewportHeight = Math.max(1, areaRect.height - reserved - 8);
+      const cssScale = Math.min(maxViewportWidth / intrinsicW, maxViewportHeight / intrinsicH, 1);
+      const dpr = window.devicePixelRatio || 1;
+      // Backing buffer target in device pixels, limited by GPU constraints
+      const targetW = Math.max(1, Math.floor(intrinsicW * cssScale * dpr));
+      const targetH = Math.max(1, Math.floor(intrinsicH * cssScale * dpr));
+      const limited = ensureCanvasSizeWithinLimits(targetW, targetH);
+      return { width: limited.width, height: limited.height, drawScaleX: limited.width / intrinsicW, drawScaleY: limited.height / intrinsicH };
+    }
+
     let currentPattern = [];
     async function drawPattern() {
       const pattern = await loadJSON('pattern.json');
@@ -644,16 +704,10 @@
       const width = data.canvas_width || 500;
       const height = data.canvas_height || 500;
 
-      // Ensure backing buffer fits browser/GPU limits. If needed downscale internal buffer but keep
-      // the original requested intrinsic size for display (CSS) so UI remains consistent.
-      const adjusted = ensureCanvasSizeWithinLimits(width, height);
-      if (adjusted.scale !== 1) {
-        console.warn('Requested canvas size exceeds browser limits; drawing buffer downscaled by', adjusted.scale.toFixed(3));
-      }
-      // set the actual drawing buffer (may be downscaled)
-      canvas.width = adjusted.width;
-      canvas.height = adjusted.height;
-      // apply display size using original requested intrinsic size so the canvas appears at expected dimensions
+      // Compute backing size according to visible viewport (avoid rendering invisible pixels)
+      const backing = computeBackingSize(width, height);
+      canvas.width = backing.width;
+      canvas.height = backing.height;
       applyCanvasDisplaySize(canvas, width, height);
 
       let maxX = 0, maxY = 0;
@@ -662,8 +716,8 @@
         if (tile.grid_y > maxY) maxY = tile.grid_y;
       });
       // When backing buffer was downscaled, we must scale drawing coordinates to match.
-      const drawScaleX = adjusted.width / width;
-      const drawScaleY = adjusted.height / height;
+  const drawScaleX = backing.drawScaleX;
+  const drawScaleY = backing.drawScaleY;
       const cols = Math.max(1, maxX);
       const rows = Math.max(1, maxY);
       const tileSize = Math.min(width / cols, height / rows);
@@ -674,11 +728,11 @@
 
   const ctx = canvas.getContext('2d');
   // Clear the full backing buffer (use adjusted size)
-  ctx.clearRect(0, 0, adjusted.width, adjusted.height);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
 
       // Fill background with white for margins
       ctx.fillStyle = "#fff";
-      ctx.fillRect(0, 0, adjusted.width, adjusted.height);
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
 
       pattern.forEach(tile => {
         // map display coordinates into backing-buffer coordinates if downscaled
@@ -812,16 +866,13 @@
         const width = data.canvas_width || 500;
         const height = data.canvas_height || 500;
 
-        const adjusted = ensureCanvasSizeWithinLimits(width, height);
-        if (adjusted.scale !== 1) {
-          console.warn('Requested canvas size exceeds browser limits; drawing buffer downscaled by', adjusted.scale.toFixed(3));
-        }
-        canvas.width = adjusted.width;
-        canvas.height = adjusted.height;
+        const backing = computeBackingSize(width, height);
+        canvas.width = backing.width;
+        canvas.height = backing.height;
         applyCanvasDisplaySize(canvas, width, height);
 
-        const drawScaleX = adjusted.width / width;
-        const drawScaleY = adjusted.height / height;
+        const drawScaleX = backing.drawScaleX;
+        const drawScaleY = backing.drawScaleY;
         let maxX = 0, maxY = 0;
          pattern.forEach(tile => {
            if (tile.grid_x > maxX) maxX = tile.grid_x;
@@ -837,11 +888,11 @@
  
          const ctx = canvas.getContext('2d');
 
-         ctx.clearRect(0, 0, adjusted.width, adjusted.height);
+         ctx.clearRect(0, 0, canvas.width, canvas.height);
  
          // Fill background with white for margins
          ctx.fillStyle = "#fff";
-         ctx.fillRect(0, 0, adjusted.width, adjusted.height);
+         ctx.fillRect(0, 0, canvas.width, canvas.height);
  
          pattern.forEach(tile => {
            const x_disp = offsetX + (tile.grid_x - 1) * tileSize + margin / 2;
@@ -858,7 +909,7 @@
      }
  
      // On new generation, always append to end of history (never erase forward)
-    async function generateAndSaveHistory() {
+  async function generateAndSaveHistory() {
       // Avoid starting another generation if one is already in progress
       if (isGenerationInProgress) return;
       // POST to /generate must include credentials so cookie (mirrored from localStorage) is sent
@@ -869,7 +920,11 @@
   updateGenIndicator();
       try {
         // send generate request and then poll server status for completion
-        await fetch('/generate', { method: 'POST', credentials: 'same-origin' });
+        const genResp = await fetch('/generate', { method: 'POST', credentials: 'same-origin' });
+        if (!genResp.ok) {
+          try { const js = await genResp.json(); showToast(js && js.message ? js.message : 'Generation failed to start', 'error'); } catch {}
+          throw new Error('Failed to start generation');
+        }
 
         const timeoutMs = 60000; // 60s
         const pollInterval = 400; // 0.4s
@@ -886,9 +941,13 @@
           }
           await new Promise(r => setTimeout(r, pollInterval));
         }
+        if (status !== 'done') {
+          showToast('Generation timed out. Try again.', 'error');
+          return;
+        }
         // Now fetch the latest pattern once
         let pattern = [];
-        try { pattern = await fetchCurrentPattern(); } catch (e) { pattern = []; }
+        try { pattern = await fetchCurrentPattern(); } catch (e) { pattern = []; showToast('Failed to fetch pattern.json', 'error'); }
 
         const data = await loadJSON('data.json'); // capture the data that produced this pattern
         // Always append new pattern+data to end of history
@@ -1429,7 +1488,7 @@
           historyIndex = patternHistory.length - 1;
           await drawPatternFromHistory(historyIndex);
           saveHistory();
-        }catch(err){ console.warn('magic-wand failed', err); }
+        }catch(err){ console.warn('magic-wand failed', err); showToast('Magic wand failed. Please try again.', 'error'); }
       }
 
       async function postEdit(region_id, action){
@@ -1452,6 +1511,7 @@
           saveHistory();
         }catch(err){
           console.warn('edit-region failed', err);
+          showToast('Edit failed. Please try again.', 'error');
         }
       }
 
@@ -1515,6 +1575,25 @@
       });
       canvas.addEventListener('mouseleave', ()=>{ clearOverlay(); });
     })();
+  </script>
+  <script>
+    // Simple toast helper
+    function showToast(message, type = 'info', ms = 3200) {
+      try {
+        const container = document.getElementById('toastContainer');
+        if (!container) return;
+        const el = document.createElement('div');
+        el.className = `toast ${type}`;
+        el.innerHTML = `<span>${escapeHtml(String(message || ''))}</span><span class="close" aria-label="Close">✕</span>`;
+        const closer = el.querySelector('.close');
+        if (closer) closer.onclick = () => { container.removeChild(el); };
+        container.appendChild(el);
+        setTimeout(() => { if (el.parentNode === container) container.removeChild(el); }, ms);
+      } catch (e) { /* ignore */ }
+    }
+    function escapeHtml(s){
+      return s.replace(/[&<>"]+/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]));
+    }
   </script>
 </body>
 </html>

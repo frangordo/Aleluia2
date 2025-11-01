@@ -146,6 +146,12 @@ def _regions_path_for(sid):
     return os.path.join(USER_DATA_DIR, f"regions_{sid}.json")
 
 
+def _meta_path_for(sid):
+    if not sid:
+        return os.path.join(os.path.dirname(__file__), 'meta.json')
+    return os.path.join(USER_DATA_DIR, f"meta_{sid}.json")
+
+
 def _data_path_for(sid):
     if not sid:
         return os.path.join(os.path.dirname(__file__), 'data.json')
@@ -226,8 +232,12 @@ def _worker_generate_latest(sid):
             # Perform in-process generation under a global lock (pm has globals)
             with _pm_global_lock:
                 try:
-                    pattern = pm.generate(settings=settings) if pm is not None else None
+                    # Create a deterministic seed per full-generation run
+                    start_ts = time.time()
+                    seed = int(time.time_ns() ^ hash(sid or 'global')) & 0x7FFFFFFF
+                    pattern = pm.generate(settings=settings, seed=seed) if pm is not None else None
                     regions = getattr(pm, 'REGIONS', []) if pm is not None else []
+                    elapsed_ms = int((time.time() - start_ts) * 1000)
                 except Exception as e:
                     print("in-process generate failed:", e)
                     # On failure, clear running marker (keep idle state)
@@ -248,8 +258,24 @@ def _worker_generate_latest(sid):
             # Write outputs atomically for this session
             pattern_path = _pattern_path_for(sid)
             regions_path = _regions_path_for(sid)
+            meta_path = _meta_path_for(sid)
             _json_dump_file(pattern or [], pattern_path)
             _json_dump_file(regions or [], regions_path)
+            _json_dump_file({"pattern_seed": seed, "generated_at": time.time()}, meta_path)
+
+            # Structured log for diagnostics
+            try:
+                log_obj = {
+                    "event": "generate_done",
+                    "sid": sid or "global",
+                    "tiles": len(pattern or []),
+                    "regions": len(regions or []),
+                    "elapsed_ms": elapsed_ms,
+                    "seed": seed,
+                }
+                print(json.dumps(log_obj))
+            except Exception:
+                pass
 
             # Mark done and clean up
             _mark_done_and_clear_running(sid)
@@ -488,6 +514,7 @@ def edit_region():
             cf, cp = _pick_two_distinct_palette_colors(data_path)
         color_fundo, color_padrao = cf, cp
         variant = int(region.get('variant') or 1)
+        region_seed = int(region.get('seed')) if str(region.get('seed')).isdigit() else None
     else:  # reroll: new variant and new colors
         cf, cp = _pick_two_distinct_palette_colors(data_path)
         color_fundo, color_padrao = cf, cp
@@ -496,12 +523,14 @@ def edit_region():
             variant = random.randint(1, 14)
         else:
             variant = random.randint(1, 7)
+        # new seed for reroll
+        region_seed = int(time.time_ns() ^ (region_id << 8)) & 0x7FFFFFFF
 
     # Generate new tiles for this region
     # Load current session settings to ensure region generation uses matching canvas/grid dims
     settings = _load_json_safe(data_path, {})
     try:
-        tiles = pm.generate_region(region_id, x1, y1, x2, y2, shape, variant, color_fundo, color_padrao, settings=settings)
+        tiles = pm.generate_region(region_id, x1, y1, x2, y2, shape, variant, color_fundo, color_padrao, settings=settings, seed=region_seed)
     except Exception as e:
         return jsonify({"status": "error", "message": f"Failed to generate region: {e}"}), 500
 
@@ -518,6 +547,8 @@ def edit_region():
         region['variant'] = int(variant)
         region['color_fundo'] = color_fundo
         region['color_padrao'] = color_padrao
+        if region_seed is not None:
+            region['seed'] = int(region_seed)
         with open(regions_path, 'w') as rf:
             json.dump(regions, rf, indent=2)
     except Exception as e:
@@ -573,10 +604,12 @@ def magic_wand():
     # regions bookkeeping
     regions = _load_json_safe(regions_path, [])
     next_id = (max([int(r.get('id', 0)) for r in regions]) + 1) if regions else 1
+    # region seed
+    region_seed = int(time.time_ns() ^ (next_id << 8)) & 0x7FFFFFFF
 
     # generate tiles for this new region
     try:
-        tiles = pm.generate_region(next_id, x_lo, y_lo, x_hi, y_hi, shape, variant, color_fundo, color_padrao, settings=settings)
+        tiles = pm.generate_region(next_id, x_lo, y_lo, x_hi, y_hi, shape, variant, color_fundo, color_padrao, settings=settings, seed=region_seed)
     except Exception as e:
         return jsonify({"status": "error", "message": f"Failed to generate region: {e}"}), 500
 
@@ -601,7 +634,8 @@ def magic_wand():
         'shape': shape,
         'variant': int(variant),
         'color_fundo': color_fundo,
-        'color_padrao': color_padrao
+        'color_padrao': color_padrao,
+        'seed': int(region_seed)
     }
     regions.append(new_region)
 
