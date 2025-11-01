@@ -359,6 +359,7 @@
         <button id="backBtn" disabled>&#8592; Go Back</button>
         <button id="forwardBtn" disabled>Go Forward &#8594;</button>
         <button id="magicWandBtn" title="Select two tiles to fill a rectangular region">✨ Magic Wand</button>
+        <button id="recolorAllBtn" title="Recolor all regions using active palette">🎨 Recolor All</button>
         <button id="printBtn">🖨️ Print Instructions</button>
       </div>
     </div>
@@ -495,7 +496,8 @@
             // clear background when turned off to show the hatch pattern
             swatch.style.background = '';
           }
-          autoSaveAndGenerate();
+            // For color palette changes, recolor existing layout instead of regenerating
+            autoSaveAndRecolorImmediate();
         });
       }
     }
@@ -580,7 +582,57 @@
         data[btnKey] = { state: state, color: color };
       }
       await postJSON('/data.json', data);
-      await generateAndSaveHistory();
+        await generateAndSaveHistory();
+      }
+
+      async function saveSettings(data) {
+        await postJSON('/data.json', data);
+      }
+
+      // Build settings object from the form
+      function buildSettingsFromForm() {
+        const data = {};
+        data.knob_down = parseInt(document.getElementById('knob_down').value);
+        data.slider = parseInt(document.getElementById('slider').value);
+        const sw = document.querySelector('input[name="switch"]:checked');
+        data.switch = sw ? sw.value : 'center';
+        data.canvas_width = parseInt(document.getElementById('canvas_width').value);
+        data.canvas_height = parseInt(document.getElementById('canvas_height').value);
+        for (let i = 0; i <= 9; i++) {
+          const btnKey = `button_${i}`;
+          const swatch = document.getElementById(btnKey + '_swatch');
+          const color = (swatch && swatch.dataset && swatch.dataset.color) ? swatch.dataset.color : DEFAULT_BUTTON_COLORS[i];
+          const state = (swatch && !swatch.classList.contains('inactive')) ? "on" : "off";
+          data[btnKey] = { state: state, color: color };
+        }
+        return data;
+      }
+
+      // Save settings then recolor all instead of generating (only for palette changes)
+      async function autoSaveAndRecolorImmediate() {
+        const data = buildSettingsFromForm();
+        await saveSettings(data);
+        try {
+          await recolorAllAndSaveHistory();
+        } catch (e) {
+          const msg = (e && e.message) ? e.message : String(e || '');
+          if (msg.includes('No regions available to recolor')) {
+            // If there are no regions yet, do a one-time generate to create layout
+            showToast('No regions yet. Generating a base pattern…', 'info');
+            await generateAndSaveHistory();
+          } else {
+            // Other errors: surface and do not auto-generate
+            showToast(msg || 'Recolor failed.', 'error');
+            return;
+          }
+        }
+      }
+
+      // Save form to data.json and generate new pattern (immediate)
+      async function autoSaveAndGenerate() {
+        const data = buildSettingsFromForm();
+        await saveSettings(data);
+        await generateAndSaveHistory();
     }
 
     // Attach auto-save to all inputs in the form
@@ -1026,6 +1078,27 @@
     }
 
     document.getElementById('generateBtn').onclick = generateAndSaveHistory;
+
+    // Recolor-all path shared by button and palette-change flow
+    async function recolorAllAndSaveHistory() {
+      const resp = await fetch('/recolor-all', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'same-origin'
+      });
+      const js = await resp.json();
+      if (!resp.ok) {
+        const msg = (js && js.message) ? js.message : 'Recolor-all failed';
+        throw new Error(msg);
+      }
+      const pattern = js.pattern || [];
+      const data = await loadJSON('data.json');
+      patternHistory.push({ p: compressPatternRows(pattern), d: data, v: 1 });
+      if (patternHistory.length > 100) patternHistory = patternHistory.slice(-100);
+      historyIndex = patternHistory.length - 1;
+      await drawPatternFromHistory(historyIndex);
+      saveHistory();
+    }
 
     document.getElementById('backBtn').onclick = function() {
       if (historyIndex > 0) {
@@ -1563,6 +1636,23 @@
           showToast('Edit failed. Please try again.', 'error');
         }
       }
+
+      // Recolor all regions
+      const recolorAllBtn = document.getElementById('recolorAllBtn');
+      async function recolorAll(){
+        if (!recolorAllBtn) return;
+        recolorAllBtn.disabled = true;
+        try{
+            await recolorAllAndSaveHistory();
+            showToast('Recolored all regions', 'success');
+          }catch(err){
+            console.warn('recolor-all failed', err);
+            showToast(err.message || 'Recolor-all failed', 'error');
+          } finally {
+            recolorAllBtn.disabled = false;
+          }
+      }
+      if (recolorAllBtn) recolorAllBtn.addEventListener('click', recolorAll);
 
       canvas.addEventListener('click', async (e)=>{
         const g = getGridFromEvent(e);

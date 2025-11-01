@@ -3,179 +3,432 @@
     "id": 1,
     "x1": 1,
     "y1": 1,
-    "x2": 12,
-    "y2": 12,
+    "x2": 11,
+    "y2": 11,
     "shape": "aleluia_quadrados",
-    "variant": 7,
-    "color_fundo": "#ff7b24",
-    "color_padrao": "#fcff4d"
+    "variant": 8,
+    "color_fundo": "#007EA7",
+    "color_padrao": "#ff66de",
+    "recolor_count": 11,
+    "last_pairs": [
+      [
+        "#fcff4d",
+        "#f98686"
+      ],
+      [
+        "#fcff4d",
+        "#f98686"
+      ],
+      [
+        "#007EA7",
+        "#ff66de"
+      ]
+    ],
+    "seed": 1133502292
   },
   {
     "id": 2,
     "x1": 1,
-    "y1": 13,
-    "x2": 12,
-    "y2": 24,
+    "y1": 12,
+    "x2": 11,
+    "y2": 23,
     "shape": "aleluia_quadrados",
     "variant": 11,
     "color_fundo": "#fcff4d",
-    "color_padrao": "#ff7b24"
+    "color_padrao": "#007EA7",
+    "recolor_count": 11,
+    "last_pairs": [
+      [
+        "#fcff4d",
+        "#ff66de"
+      ],
+      [
+        "#fcff4d",
+        "#ff66de"
+      ],
+      [
+        "#fcff4d",
+        "#007EA7"
+      ]
+    ],
+    "seed": 1133499220
   },
   {
     "id": 3,
     "x1": 1,
-    "y1": 25,
-    "x2": 12,
-    "y2": 36,
+    "y1": 24,
+    "x2": 11,
+    "y2": 34,
     "shape": "aleluia_quadrados",
-    "variant": 6,
-    "color_fundo": "#ff7b24",
-    "color_padrao": "#fcff4d"
+    "variant": 3,
+    "color_fundo": "#bd7ef1",
+    "color_padrao": "#ff7b24",
+    "recolor_count": 11,
+    "last_pairs": [
+      [
+        "#bd7ef1",
+        "#007EA7"
+      ],
+      [
+        "#bd7ef1",
+        "#007EA7"
+      ],
+      [
+        "#bd7ef1",
+        "#ff7b24"
+      ]
+    ],
+    "seed": 1133500244
   },
   {
     "id": 4,
     "x1": 1,
-    "y1": 37,
-    "x2": 12,
+    "y1": 35,
+    "x2": 11,
     "y2": 40,
     "shape": "aleluia_quadrados",
-    "variant": 4,
-    "color_fundo": "#fcff4d",
-    "color_padrao": "#62fe74"
+    "variant": 13,
+    "color_fundo": "#bd7ef1",
+    "color_padrao": "#007EA7",
+    "recolor_count": 11,
+    "last_pairs": [
+      [
+        "#f98686",
+        "#ff7b24"
+      ],
+      [
+        "#f98686",
+        "#ff7b24"
+      ],
+      [
+        "#bd7ef1",
+        "#007EA7"
+      ]
+    ],
+    "seed": 1133497172
   },
   {
     "id": 5,
-    "x1": 13,
+    "x1": 12,
     "y1": 1,
-    "x2": 24,
-    "y2": 12,
+    "x2": 22,
+    "y2": 11,
     "shape": "aleluia_quadrados",
-    "variant": 1,
-    "color_fundo": "#fcff4d",
-    "color_padrao": "#ff7b24"
+    "variant": 3,
+    "color_fundo": "#ff66de",
+    "color_padrao": "#ff7b24",
+    "recolor_count": 11,
+    "last_pairs": [
+      [
+        "#bd7ef1",
+        "#007EA7"
+      ],
+      [
+        "#bd7ef1",
+        "#007EA7"
+      ],
+      [
+        "#ff66de",
+        "#ff7b24"
+      ]
+    ],
+    "seed": 1133498196
   },
   {
     "id": 6,
-    "x1": 13,
-    "y1": 13,
-    "x2": 24,
+    "x1": 12,
+    "y1": 12,
+    "x2": 22,
     "y2": 23,
     "shape": "aleluia_quadrados",
-    "variant": 5,
-    "color_fundo": "#fcff4d",
-    "color_padrao": "#ff7b24",
-    "seed": 267040032
+    "variant": 12,
+    "color_fundo": "#ffffff",
+    "color_padrao": "#f98686",
+    "recolor_count": 11,
+    "last_pairs": [
+      [
+        "#ff7b24",
+        "#fcff4d"
+      ],
+      [
+        "#ff7b24",
+        "#fcff4d"
+      ],
+      [
+        "#f98686",
+        "#bd7ef1"
+      ]
+    ],
+    "seed": 1488595336
   },
   {
     "id": 7,
-    "x1": 13,
+    "x1": 12,
     "y1": 24,
-    "x2": 24,
+    "x2": 22,
     "y2": 35,
     "shape": "aleluia_quadrados",
-    "variant": 4,
-    "color_fundo": "#ff7b24",
-    "color_padrao": "#62fe74",
-    "seed": 1596448400
+    "variant": 9,
+    "color_fundo": "#bd7ef1",
+    "color_padrao": "#ff7b24",
+    "recolor_count": 11,
+    "last_pairs": [
+      [
+        "#bd7ef1",
+        "#fcff4d"
+      ],
+      [
+        "#bd7ef1",
+        "#fcff4d"
+      ],
+      [
+        "#fcff4d",
+        "#ff66de"
+      ]
+    ],
+    "seed": 400742004
   },
   {
     "id": 8,
-    "x1": 13,
+    "x1": 12,
     "y1": 36,
-    "x2": 24,
+    "x2": 22,
     "y2": 40,
     "shape": "aleluia_quadrados",
-    "variant": 9,
-    "color_fundo": "#fcff4d",
-    "color_padrao": "#ff7b24"
+    "variant": 4,
+    "color_fundo": "#f98686",
+    "color_padrao": "#bd7ef1",
+    "recolor_count": 11,
+    "last_pairs": [
+      [
+        "#ff66de",
+        "#bd7ef1"
+      ],
+      [
+        "#ff66de",
+        "#bd7ef1"
+      ],
+      [
+        "#f98686",
+        "#bd7ef1"
+      ]
+    ],
+    "seed": 1133509460
   },
   {
     "id": 9,
-    "x1": 25,
+    "x1": 23,
     "y1": 1,
-    "x2": 35,
+    "x2": 33,
     "y2": 12,
     "shape": "aleluia_quadrados",
-    "variant": 8,
-    "color_fundo": "#fcff4d",
-    "color_padrao": "#62fe74"
+    "variant": 12,
+    "color_fundo": "#ff66de",
+    "color_padrao": "#007EA7",
+    "recolor_count": 11,
+    "last_pairs": [
+      [
+        "#fcff4d",
+        "#f98686"
+      ],
+      [
+        "#fcff4d",
+        "#f98686"
+      ],
+      [
+        "#007EA7",
+        "#f98686"
+      ]
+    ],
+    "seed": 1798517816
   },
   {
     "id": 10,
-    "x1": 25,
+    "x1": 23,
     "y1": 13,
-    "x2": 35,
+    "x2": 33,
     "y2": 23,
     "shape": "aleluia_quadrados",
-    "variant": 5,
-    "color_fundo": "#ff7b24",
-    "color_padrao": "#fcff4d"
+    "variant": 11,
+    "color_fundo": "#ff66de",
+    "color_padrao": "#f98686",
+    "recolor_count": 15,
+    "last_pairs": [
+      [
+        "#ffffff",
+        "#bd7ef1"
+      ],
+      [
+        "#ffffff",
+        "#bd7ef1"
+      ],
+      [
+        "#ff66de",
+        "#f98686"
+      ]
+    ],
+    "seed": 2136060012
   },
   {
     "id": 11,
-    "x1": 25,
+    "x1": 23,
     "y1": 24,
-    "x2": 35,
-    "y2": 34,
+    "x2": 33,
+    "y2": 35,
     "shape": "aleluia_quadrados",
-    "variant": 11,
-    "color_fundo": "#ff7b24",
-    "color_padrao": "#fcff4d"
+    "variant": 14,
+    "color_fundo": "#ffffff",
+    "color_padrao": "#007EA7",
+    "recolor_count": 12,
+    "last_pairs": [
+      [
+        "#ff7b24",
+        "#bd7ef1"
+      ],
+      [
+        "#ff7b24",
+        "#bd7ef1"
+      ],
+      [
+        "#ffffff",
+        "#bd7ef1"
+      ]
+    ],
+    "seed": 741703908
   },
   {
     "id": 12,
-    "x1": 25,
-    "y1": 35,
-    "x2": 35,
+    "x1": 23,
+    "y1": 36,
+    "x2": 33,
     "y2": 40,
     "shape": "aleluia_quadrados",
-    "variant": 14,
-    "color_fundo": "#62fe74",
-    "color_padrao": "#fcff4d"
+    "variant": 10,
+    "color_fundo": "#ff7b24",
+    "color_padrao": "#007EA7",
+    "recolor_count": 11,
+    "last_pairs": [
+      [
+        "#ff7b24",
+        "#ff66de"
+      ],
+      [
+        "#ff7b24",
+        "#ff66de"
+      ],
+      [
+        "#ff7b24",
+        "#007EA7"
+      ]
+    ],
+    "seed": 1133505364
   },
   {
     "id": 13,
-    "x1": 36,
+    "x1": 34,
     "y1": 1,
     "x2": 40,
     "y2": 12,
     "shape": "aleluia_quadrados",
-    "variant": 4,
+    "variant": 12,
     "color_fundo": "#fcff4d",
-    "color_padrao": "#ff7b24"
+    "color_padrao": "#f98686",
+    "recolor_count": 11,
+    "last_pairs": [
+      [
+        "#007EA7",
+        "#fcff4d"
+      ],
+      [
+        "#007EA7",
+        "#fcff4d"
+      ],
+      [
+        "#fcff4d",
+        "#f98686"
+      ]
+    ],
+    "seed": 1133506388
   },
   {
     "id": 14,
-    "x1": 36,
+    "x1": 34,
     "y1": 13,
     "x2": 40,
     "y2": 23,
     "shape": "aleluia_quadrados",
-    "variant": 10,
-    "color_fundo": "#62fe74",
-    "color_padrao": "#fcff4d",
-    "seed": 1150756708
+    "variant": 11,
+    "color_fundo": "#ff66de",
+    "color_padrao": "#bd7ef1",
+    "recolor_count": 11,
+    "last_pairs": [
+      [
+        "#ff66de",
+        "#ff7b24"
+      ],
+      [
+        "#ff66de",
+        "#ff7b24"
+      ],
+      [
+        "#ff66de",
+        "#bd7ef1"
+      ]
+    ],
+    "seed": 1133503316
   },
   {
     "id": 15,
-    "x1": 36,
+    "x1": 34,
     "y1": 24,
     "x2": 40,
     "y2": 35,
     "shape": "aleluia_quadrados",
-    "variant": 1,
-    "color_fundo": "#ff7b24",
-    "color_padrao": "#fcff4d"
+    "variant": 5,
+    "color_fundo": "#ff66de",
+    "color_padrao": "#bd7ef1",
+    "recolor_count": 11,
+    "last_pairs": [
+      [
+        "#007EA7",
+        "#bd7ef1"
+      ],
+      [
+        "#007EA7",
+        "#bd7ef1"
+      ],
+      [
+        "#ff66de",
+        "#bd7ef1"
+      ]
+    ],
+    "seed": 1133504340
   },
   {
     "id": 16,
-    "x1": 36,
+    "x1": 34,
     "y1": 36,
     "x2": 40,
     "y2": 40,
     "shape": "aleluia_quadrados",
-    "variant": 5,
+    "variant": 8,
     "color_fundo": "#ff7b24",
-    "color_padrao": "#fcff4d"
+    "color_padrao": "#ffffff",
+    "recolor_count": 11,
+    "last_pairs": [
+      [
+        "#ff7b24",
+        "#bd7ef1"
+      ],
+      [
+        "#ff7b24",
+        "#bd7ef1"
+      ],
+      [
+        "#ff7b24",
+        "#ffffff"
+      ]
+    ],
+    "seed": 1133484884
   }
 ]

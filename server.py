@@ -34,8 +34,6 @@ app = Flask(__name__, static_folder='static')
 if _FlaskCompress is not None:
     _FlaskCompress(app)
 
-
-
 # CONFIGURABLE QUOTAS (set via env vars)
 USER_DATA_MAX_BYTES = int(os.environ.get('USER_DATA_MAX_BYTES', 50 * 1024 * 1024))  # default 50 MB
 USER_DATA_MAX_FILES = int(os.environ.get('USER_DATA_MAX_FILES', 1000))              # default 1000 files
@@ -483,6 +481,129 @@ def _active_palette_colors(data_path):
     # unique preserve order
     return list({c: True for c in colors}.keys())
 
+def _recent_pairs_from_region(region):
+    lst = region.get('last_pairs') or []
+    # Normalize to list of (cf, cp)
+    norm = []
+    for itm in lst:
+        if isinstance(itm, (list, tuple)) and len(itm) == 2:
+            norm.append((itm[0], itm[1]))
+    return norm
+
+
+def _choose_new_colors_for_region(region, palette, sid):
+    """Choose a new (cf, cp) for the region using a deterministic PRNG tied to region seed and
+    a small per-region counter to avoid alternating between two states. Avoid the last few pairs.
+    Updates region['recolor_count'] and region['last_pairs'].
+    """
+    import random as _rr
+    # Helper: ensure we have at least two colors to choose from
+    def _hex_to_rgb(c):
+        try:
+            s = str(c).strip()
+            if s.startswith('#') and len(s) == 7:
+                r = int(s[1:3], 16); g = int(s[3:5], 16); b = int(s[5:7], 16)
+                return (r, g, b)
+        except Exception:
+            pass
+        return None
+    def _contrast_bw(c):
+        rgb = _hex_to_rgb(c)
+        if rgb is None:
+            # fallback on name
+            if str(c).lower() in ('white', '#fff', '#ffffff'): return 'black'
+            return 'white'
+        r, g, b = rgb
+        # perceived luminance (sRGB) simple approximation
+        lum = 0.2126*(r/255) + 0.7152*(g/255) + 0.0722*(b/255)
+        return 'black' if lum > 0.5 else 'white'
+    def _ensure_pair_palette(pal, prev_cf=None, prev_cp=None):
+        pal = list(pal or [])
+        if len(pal) >= 2:
+            return pal
+        if len(pal) == 1:
+            c = pal[0]
+            other = _contrast_bw(c)
+            if other == c:
+                other = 'white' if c.lower() != 'white' else 'black'
+            return [c, other]
+        # none active -> fallback
+        return ['black', 'white']
+
+    palette = _ensure_pair_palette(palette, region.get('color_fundo'), region.get('color_padrao'))
+    prev_cf = region.get('color_fundo')
+    prev_cp = region.get('color_padrao')
+    recent = _recent_pairs_from_region(region)
+    # Ensure current pair is also avoided
+    if prev_cf and prev_cp:
+        recent = list(recent) + [(prev_cf, prev_cp)]
+    # Deterministic RNG based on region seed + recolor_count
+    rid = int(region.get('id')) if region.get('id') is not None else 0
+    seed = _coerce_int(region.get('seed')) or _derive_region_seed(rid, sid)
+    count = int(region.get('recolor_count') or 0)
+    prng = _rr.Random((int(seed) & 0x7FFFFFFF) ^ (count * 0x9E3779B1))
+    # Try to pick a pair not in recent
+    max_tries = 24
+    choice = None
+    for _ in range(max_tries):
+        a, b = prng.sample(palette, 2)
+        if (a, b) not in recent:
+            choice = (a, b)
+            break
+    if choice is None:
+        # If only two colors or palette very small, flip as last resort
+        if len(palette) == 2 and prev_cf in palette and prev_cp in palette:
+            choice = (prev_cp, prev_cf)
+        else:
+            # Pick deterministically by rotating indices
+            i = prng.randrange(0, len(palette))
+            j = (i + 1 + prng.randrange(0, len(palette) - 1)) % len(palette)
+            choice = (palette[i], palette[j])
+    # Update region history
+    region['recolor_count'] = count + 1
+    new_hist = recent[-2:]  # keep last two (excluding current chosen)
+    new_hist.append(choice)
+    # store as list of lists for JSON friendliness
+    region['last_pairs'] = [[c[0], c[1]] for c in new_hist]
+    return choice
+
+
+def _pick_pair_different_from(prev_cf, prev_cp, palette):
+    """Pick a (cf,cp) from palette differing from previous pair; flip if needed for 2-color palettes."""
+    if not palette or len(palette) < 2:
+        return ('black', 'white')
+    import random as _rr
+    # Try a few random attempts to differ
+    for _ in range(8):
+        a, b = _rr.sample(palette, 2)
+        if not (a == prev_cf and b == prev_cp):
+            return (a, b)
+    # If only two colors or repeated draws equal, flip order to guarantee visible change
+    if len(palette) == 2 and prev_cf in palette and prev_cp in palette:
+        return (prev_cp, prev_cf)
+    # Fallback to any two distinct
+    a, b = _rr.sample(palette, 2)
+    return (a, b)
+
+
+def _coerce_int(v, default=None):
+    try:
+        return int(v)
+    except Exception:
+        return default
+
+
+def _derive_region_seed(region_id, sid):
+    """Derive a deterministic seed for a region when none is stored, based on session meta and region id."""
+    try:
+        meta = _json_load_file(_meta_path_for(sid), {})
+        base = int(meta.get('pattern_seed')) if meta and 'pattern_seed' in meta else None
+    except Exception:
+        base = None
+    if base is None:
+        base = int(time.time_ns() ^ hash(sid or 'global')) & 0x7FFFFFFF
+    return int((base ^ (int(region_id) << 10)) & 0x7FFFFFFF)
+
 @app.route('/edit-region', methods=['POST'])
 def edit_region():
     """
@@ -528,26 +649,11 @@ def edit_region():
         prev_cf = region.get('color_fundo')
         prev_cp = region.get('color_padrao')
         if not (cf and cp):
-            # Prefer a pair different from the current one (order-insensitive)
             palette = _active_palette_colors(data_path)
-            if len(palette) >= 2:
-                import random as _rr
-                # Try a few random draws first
-                cf, cp = prev_cf, prev_cp
-                for _ in range(6):
-                    a, b = _rr.sample(palette, 2)
-                    if not ({a, b} == {prev_cf, prev_cp} and (a == prev_cf and b == prev_cp)):
-                        cf, cp = a, b
-                        break
-                # If still equal, and exactly two colors in palette, flip order to guarantee visible change
-                if cf == prev_cf and cp == prev_cp and len(palette) == 2:
-                    cf, cp = prev_cp, prev_cf
-            else:
-                # Fallback
-                cf, cp = _pick_two_distinct_palette_colors(data_path)
+            cf, cp = _choose_new_colors_for_region(region, palette, sid)
         color_fundo, color_padrao = cf, cp
         variant = int(region.get('variant') or 1)
-        region_seed = int(region.get('seed')) if str(region.get('seed')).isdigit() else None
+        region_seed = _coerce_int(region.get('seed')) or _derive_region_seed(region_id, sid)
     else:  # reroll: new variant and new colors
         cf, cp = _pick_two_distinct_palette_colors(data_path)
         color_fundo, color_padrao = cf, cp
@@ -682,6 +788,62 @@ def magic_wand():
         return jsonify({"status": "error", "message": f"Failed to save magic wand result: {e}"}), 500
 
     return jsonify({"status": "ok", "pattern": kept, "regions": regions, "region": new_region})
+
+
+@app.route('/recolor-all', methods=['POST'])
+def recolor_all():
+    """Recolor all existing regions (keep layout/variant/seed), return full updated pattern and regions."""
+    if pm is None:
+        return jsonify({"status": "error", "message": "Generator module not available"}), 500
+    sid = _session_id_from_request()
+    pattern_path = _pattern_path_for(sid)
+    regions_path = _regions_path_for(sid)
+    data_path = _data_path_for(sid)
+    settings = _json_load_file(data_path, {})
+
+    regions = _load_json_safe(regions_path, [])
+    if not regions:
+        return jsonify({"status": "error", "message": "No regions available to recolor"}), 400
+    palette = _active_palette_colors(data_path)
+
+    # Build new tiles per region
+    new_tiles_all = []
+    try:
+        for idx, region in enumerate(regions):
+            try:
+                rid = int(region.get('id'))
+                shape = region.get('shape')
+                x1 = int(region.get('x1')); y1 = int(region.get('y1'))
+                x2 = int(region.get('x2')); y2 = int(region.get('y2'))
+                cf, cp = _choose_new_colors_for_region(region, palette, sid)
+                seed = _coerce_int(region.get('seed')) or _derive_region_seed(rid, sid)
+                variant = int(region.get('variant') or 1)
+                tiles = pm.generate_region(rid, x1, y1, x2, y2, shape, variant, cf, cp, settings=settings, seed=seed)
+                new_tiles_all.extend(tiles)
+                # Update region colors (and ensure seed stored)
+                region['color_fundo'] = cf
+                region['color_padrao'] = cp
+                region['seed'] = int(seed)
+            except Exception as e:
+                return jsonify({"status": "error", "message": f"Failed recoloring region {region.get('id')}: {e}"}), 500
+    except Exception as e:
+        return jsonify({"status": "error", "message": f"Failed to recolor all: {e}"}), 500
+
+    # Merge with existing pattern by replacing all region tiles
+    pattern = _load_json_safe(pattern_path, [])
+    keep = [t for t in pattern if (t.get('region_id') is None)]
+    keep.extend(new_tiles_all)
+
+    # Save
+    try:
+        with open(pattern_path, 'w') as pf:
+            json.dump(keep, pf, indent=2)
+        with open(regions_path, 'w') as rf:
+            json.dump(regions, rf, indent=2)
+    except Exception as e:
+        return jsonify({"status": "error", "message": f"Failed to save recolor-all: {e}"}), 500
+
+    return jsonify({"status": "ok", "pattern": keep, "regions": regions})
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
