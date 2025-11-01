@@ -392,11 +392,11 @@
         </div>
         <div class="form-row">
           <label for="canvas_width">Canvas Width:</label>
-          <input type="number" id="canvas_width" name="canvas_width" min="10" max="1000000" required>
+          <input type="number" id="canvas_width" name="canvas_width" min="10" max="900000" required>
         </div>
         <div class="form-row">
           <label for="canvas_height">Canvas Height:</label>
-          <input type="number" id="canvas_height" name="canvas_height" min="10" max="1000000" required>
+          <input type="number" id="canvas_height" name="canvas_height" min="10" max="900000" required>
         </div>
         <div class="button-row">
           <label>Buttons:</label>
@@ -788,6 +788,24 @@
     }
     
     function saveHistory() {
+      const MIN_HISTORY = 15;  // user-requested minimum steps if space allows
+      const MAX_HISTORY = 100; // hard cap to keep storage sane
+
+      // Ensure we don't exceed MAX_HISTORY entries in memory
+      if (patternHistory.length > MAX_HISTORY) {
+        patternHistory = patternHistory.slice(patternHistory.length - MAX_HISTORY);
+        historyIndex = Math.max(0, Math.min(historyIndex, patternHistory.length - 1));
+      }
+
+      // Before saving, opportunistically convert any legacy full patterns into compressed form
+      for (let i = 0; i < patternHistory.length; i++) {
+        const e = patternHistory[i];
+        if (e && e.pattern && !e.p) {
+          // compress and drop the full pattern to save space
+          patternHistory[i] = { p: compressPatternRows(e.pattern), d: e.data || null, v: 1 };
+        }
+      }
+
       // helper to identify quota errors across browsers
       function isQuotaExceeded(err) {
         if (!err) return false;
@@ -800,9 +818,25 @@
         localStorage.setItem('patternHistory', JSON.stringify(patternHistory));
       } catch (e) {
         if (isQuotaExceeded(e)) {
-          // Keep removing oldest entries until it fits (or until only current entry left)
-          // Note: we attempt to preserve the most recent history at the end of the array.
-          while (patternHistory.length > 1) {
+          // First pass: ensure all entries are compressed
+          let changed = false;
+          for (let i = 0; i < patternHistory.length; i++) {
+            const ent = patternHistory[i];
+            if (ent && ent.pattern && !ent.p) {
+              patternHistory[i] = { p: compressPatternRows(ent.pattern), d: ent.data || null, v: 1 };
+              changed = true;
+            }
+          }
+          if (changed) {
+            try {
+              localStorage.setItem('patternHistory', JSON.stringify(patternHistory));
+            } catch (err2) {
+              // proceed to eviction if still too big
+            }
+          }
+
+          // Evict oldest until we fit, but aim to preserve at least MIN_HISTORY
+          while (patternHistory.length > MIN_HISTORY) {
             patternHistory.shift(); // evict oldest
             try {
               localStorage.setItem('patternHistory', JSON.stringify(patternHistory));
@@ -815,7 +849,16 @@
               // still quota exceeded -> continue evicting
             }
           }
-          // If we still can't save (very large single entry), fall back to empty history
+          // If we still can't save, keep trimming even below MIN_HISTORY if necessary
+          while (patternHistory.length > 1) {
+            try {
+              localStorage.setItem('patternHistory', JSON.stringify(patternHistory));
+              break;
+            } catch (err) {
+              patternHistory.shift();
+            }
+          }
+          // If still can't save (single huge entry), fall back to empty history persist while keeping in-memory
           if (patternHistory.length <= 1) {
             try {
               // As a last resort, persist an empty history, but do not change the in-memory
@@ -855,7 +898,13 @@
     async function drawPatternFromHistory(idx) {
       if (patternHistory[idx]) {
         const entry = patternHistory[idx];
-        const pattern = entry.pattern || entry; // support legacy
+        // Decompress if stored compactly
+        let pattern;
+        if (entry.p && Array.isArray(entry.p)) {
+          pattern = decompressPatternRows(entry.p);
+        } else {
+          pattern = entry.pattern || entry; // support legacy
+        }
         currentPattern = Array.isArray(pattern) ? pattern : [];
         // prefer saved data that matches this pattern; fallback to current data.json
         let data = entry.data;
@@ -946,12 +995,12 @@
           return;
         }
         // Now fetch the latest pattern once
-        let pattern = [];
-        try { pattern = await fetchCurrentPattern(); } catch (e) { pattern = []; showToast('Failed to fetch pattern.json', 'error'); }
+  let pattern = [];
+  try { pattern = await fetchCurrentPattern(); } catch (e) { pattern = []; showToast('Failed to fetch pattern.json', 'error'); }
 
-        const data = await loadJSON('data.json'); // capture the data that produced this pattern
-        // Always append new pattern+data to end of history
-        patternHistory.push({ pattern: pattern, data: data });
+  const data = await loadJSON('data.json'); // capture the data that produced this pattern
+  // Append compressed pattern+data to end of history
+  patternHistory.push({ p: compressPatternRows(pattern), d: data, v: 1 });
         // Limit history to 100 generations
         if (patternHistory.length > 100) {
           patternHistory = patternHistory.slice(patternHistory.length - 100);
@@ -1471,7 +1520,7 @@
         return { grid_x: gx, grid_y: gy };
       }
 
-      async function postWand(x1,y1,x2,y2){
+  async function postWand(x1,y1,x2,y2){
         try{
           const resp = await fetch('/magic-wand', {
             method: 'POST',
@@ -1483,7 +1532,7 @@
           if (!resp.ok) throw new Error(js && js.message || 'Magic wand failed');
           const pattern = js.pattern || [];
           const data = await loadJSON('data.json');
-          patternHistory.push({ pattern, data });
+          patternHistory.push({ p: compressPatternRows(pattern), d: data, v: 1 });
           if (patternHistory.length > 100) patternHistory = patternHistory.slice(-100);
           historyIndex = patternHistory.length - 1;
           await drawPatternFromHistory(historyIndex);
@@ -1491,7 +1540,7 @@
         }catch(err){ console.warn('magic-wand failed', err); showToast('Magic wand failed. Please try again.', 'error'); }
       }
 
-      async function postEdit(region_id, action){
+  async function postEdit(region_id, action){
         try{
           const resp = await fetch('/edit-region', {
             method: 'POST',
@@ -1502,9 +1551,9 @@
           const js = await resp.json();
           if (!resp.ok) throw new Error(js && js.message || 'Edit failed');
           const pattern = js.pattern || [];
-          // push to history and draw
+          // push compressed to history and draw
           const data = await loadJSON('data.json');
-          patternHistory.push({ pattern, data });
+          patternHistory.push({ p: compressPatternRows(pattern), d: data, v: 1 });
           if (patternHistory.length > 100) patternHistory = patternHistory.slice(-100);
           historyIndex = patternHistory.length - 1;
           await drawPatternFromHistory(historyIndex);
@@ -1577,6 +1626,40 @@
     })();
   </script>
   <script>
+    // Compact pattern codec to store more steps in localStorage
+    // Row format: [gx, gy, t, r, cf, cp, rid] where t: 0=Quadrado,1=Triangulos
+    function compressPatternRows(pattern){
+      const rows = [];
+      for (let i = 0; i < pattern.length; i++){
+        const t = pattern[i];
+        const tt = (t.tile === 'Padrao Quadrado') ? 0 : 1;
+        rows.push([
+          t.grid_x|0, t.grid_y|0,
+          tt,
+          (t.rotation|0) || 0,
+          t.color_fundo || '#000',
+          t.color_padrao || '#000',
+          (t.region_id==null? null : (t.region_id|0))
+        ]);
+      }
+      return rows;
+    }
+    function decompressPatternRows(rows){
+      const out = new Array(rows.length);
+      for (let i = 0; i < rows.length; i++){
+        const r = rows[i];
+        out[i] = {
+          grid_x: r[0]|0,
+          grid_y: r[1]|0,
+          tile: (r[2] === 0) ? 'Padrao Quadrado' : 'Padrao Triangulos',
+          rotation: r[3]|0,
+          color_fundo: r[4],
+          color_padrao: r[5],
+          region_id: (r[6] == null ? null : (r[6]|0))
+        };
+      }
+      return out;
+    }
     // Simple toast helper
     function showToast(message, type = 'info', ms = 3200) {
       try {

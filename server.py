@@ -468,6 +468,21 @@ def _pick_two_distinct_palette_colors(data_path):
     a, b = random.sample(colors, 2)
     return (a, b)
 
+
+def _active_palette_colors(data_path):
+    data = _load_json_safe(data_path, {})
+    colors = []
+    for k, v in (data.items() if isinstance(data, dict) else []):
+        if not str(k).startswith('button_'):
+            continue
+        if isinstance(v, dict):
+            if v.get('state') == 'on' and v.get('color'):
+                colors.append(v['color'])
+        elif isinstance(v, str) and v != 'off':
+            colors.append(v)
+    # unique preserve order
+    return list({c: True for c in colors}.keys())
+
 @app.route('/edit-region', methods=['POST'])
 def edit_region():
     """
@@ -510,8 +525,26 @@ def edit_region():
         c_in = js.get('colors') or {}
         cf = c_in.get('color_fundo')
         cp = c_in.get('color_padrao')
+        prev_cf = region.get('color_fundo')
+        prev_cp = region.get('color_padrao')
         if not (cf and cp):
-            cf, cp = _pick_two_distinct_palette_colors(data_path)
+            # Prefer a pair different from the current one (order-insensitive)
+            palette = _active_palette_colors(data_path)
+            if len(palette) >= 2:
+                import random as _rr
+                # Try a few random draws first
+                cf, cp = prev_cf, prev_cp
+                for _ in range(6):
+                    a, b = _rr.sample(palette, 2)
+                    if not ({a, b} == {prev_cf, prev_cp} and (a == prev_cf and b == prev_cp)):
+                        cf, cp = a, b
+                        break
+                # If still equal, and exactly two colors in palette, flip order to guarantee visible change
+                if cf == prev_cf and cp == prev_cp and len(palette) == 2:
+                    cf, cp = prev_cp, prev_cf
+            else:
+                # Fallback
+                cf, cp = _pick_two_distinct_palette_colors(data_path)
         color_fundo, color_padrao = cf, cp
         variant = int(region.get('variant') or 1)
         region_seed = int(region.get('seed')) if str(region.get('seed')).isdigit() else None
