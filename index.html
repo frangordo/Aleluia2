@@ -13,32 +13,50 @@
   <!-- Replaced textual title with logo image from static/Nome.png -->
   <!-- Logo image served from ./static/Nome.png -> available at /static/Nome.png -->
   <img id="logo" src="/static/Nome.png" alt="PEPESMACHINE" style="max-width:60vw; height:auto; display:block; margin:18px auto;">
-  <!-- Potentiometer control (fixed on right) -->
-  <div id="potentiometer" aria-hidden="false" title="Zoom">
-    <img id="pot_back" src="/static/button_zoom_back.png" alt="pot-back">
-    <img id="pot_front" src="/static/button_zoom_front.png" alt="pot-front">
-    <div id="pot_value" aria-hidden="true" style="display:none"></div>
-  </div>
+  <!-- Zoom slider (replaces the image-based potentiometer) -->
+  <!-- Moved into the controls bar below; this block is intentionally removed here. -->
     <div id="patternArea">
+      <!-- Palette bar placed above the canvas (not overlaying the drawing) -->
+      <div id="paletteBar" role="group" aria-label="Color palette">
+        <span id="buttonInputs"></span>
+      </div>
       <canvas id="patternCanvas"></canvas>
       <!-- Overlay canvas for selection visualization -->
       <canvas id="overlayCanvas" style="position:absolute; left:0; top:0; pointer-events:none;"></canvas>
+      <!-- Fixed shape switch under the pattern area -->
+      <div id="shapeBar" role="group" aria-label="Shape selector">
+        <span class="switch-group">
+          <input type="radio" id="switch_left" class="switch-radio" name="switch" value="left">
+          <label for="switch_left" class="switch-option" title="Squares">⬛ Squares</label>
+          <input type="radio" id="switch_center" class="switch-radio" name="switch" value="center">
+          <label for="switch_center" class="switch-option" title="Mix">🔀 Mix</label>
+          <input type="radio" id="switch_right" class="switch-radio" name="switch" value="right">
+          <label for="switch_right" class="switch-option" title="Triangles">△ Triangles</label>
+        </span>
+      </div>
+      <!-- Fixed zoom slider at the top-right of the pattern area -->
+      <div id="zoomBar" aria-label="Zoom">
+        <input type="range" id="knob_down" name="knob_down" min="1" max="10" step="1">
+      </div>
     </div>
     <div id="controls">
-      <div class="btn-row">
-        <button id="generateBtn">Generate New Pattern</button>
-        <div id="genIndicator" class="gen-indicator hidden" aria-live="polite" aria-atomic="true">
-          <span class="spinner" aria-hidden="true"></span>
-          <span>Generating…</span>
+      <div class="btn-row-grid">
+        <button id="backBtn" disabled>&#8592; Go Back</button>
+        <div class="center-group">
+          <button id="generateBtn">Generate New Pattern</button>
+          <div id="genIndicator" class="gen-indicator hidden" aria-live="polite" aria-atomic="true">
+            <span class="spinner" aria-hidden="true"></span>
+            <span>Generating…</span>
+          </div>
         </div>
+        <button id="forwardBtn" disabled>Go Forward &#8594;</button>
       </div>
       <div class="btn-row">
-        <button id="backBtn" disabled>&#8592; Go Back</button>
-        <button id="forwardBtn" disabled>Go Forward &#8594;</button>
         <button id="magicWandBtn" title="Select two tiles to fill a rectangular region">✨ Magic Wand</button>
         <button id="recolorAllBtn" title="Recolor all regions using active palette">🎨 Recolor All</button>
         <button id="printBtn">🖨️ Print Instructions</button>
       </div>
+      <!-- Main inputs moved to pattern area (palette, shape, zoom) -->
     </div>
     <!-- Small handle to reveal hidden controls on mobile -->
     <div id="controlsHandle" title="Show controls" aria-hidden="true"></div>
@@ -51,36 +69,12 @@
       <button id="closeSettingsBtn">&#8592; Back to Canvas</button>
       <form id="settingsForm" class="form-section">
         <div class="form-row">
-          <label for="knob_down">Zoom:</label>
-          <input type="range" id="knob_down" name="knob_down" min="1" max="10" step="1">
-          <span id="zoomValue"></span>
-        </div>
-        <div class="form-row">
-          <label for="slider">Slider:</label>
-          <input type="range" id="slider" name="slider" min="0" max="100">
-          <span id="sliderValue"></span>
-        </div>
-        <div class="form-row">
-          <label>Switch:</label>
-          <span class="switch-group">
-            <input type="radio" id="switch_left" class="switch-radio" name="switch" value="left">
-            <input type="radio" id="switch_center" class="switch-radio" name="switch" value="center">
-            <input type="radio" id="switch_right" class="switch-radio" name="switch" value="right">
-          </span>
-        </div>
-        <div class="form-row">
           <label for="canvas_width">Canvas Width:</label>
           <input type="number" id="canvas_width" name="canvas_width" min="10" max="900000" required>
         </div>
         <div class="form-row">
           <label for="canvas_height">Canvas Height:</label>
           <input type="number" id="canvas_height" name="canvas_height" min="10" max="900000" required>
-        </div>
-        <div class="button-row">
-          <label>Buttons:</label>
-          <div>
-            <span id="buttonInputs"></span>
-          </div>
         </div>
         <!-- Removed the Save Settings button -->
       </form>

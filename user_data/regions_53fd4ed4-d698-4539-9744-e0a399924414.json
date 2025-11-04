@@ -1,1 +1,407 @@
-[{"id":1,"x1":1,"y1":1,"x2":4,"y2":4,"shape":"aleluia_triangulos","variant":5,"color_fundo":"#3517ab","color_padrao":"#007EA7"}]
+[
+  {
+    "id": 1,
+    "x1": 1,
+    "y1": 1,
+    "x2": 4,
+    "y2": 5,
+    "shape": "aleluia_quadrados",
+    "variant": 2,
+    "color_fundo": "#f98686",
+    "color_padrao": "black",
+    "recolor_count": 14,
+    "last_pairs": [
+      [
+        "black",
+        "white"
+      ],
+      [
+        "black",
+        "white"
+      ],
+      [
+        "#f98686",
+        "black"
+      ]
+    ],
+    "seed": 679623105
+  },
+  {
+    "id": 2,
+    "x1": 1,
+    "y1": 6,
+    "x2": 4,
+    "y2": 9,
+    "shape": "aleluia_quadrados",
+    "variant": 4,
+    "color_fundo": "black",
+    "color_padrao": "#f98686",
+    "recolor_count": 14,
+    "last_pairs": [
+      [
+        "black",
+        "white"
+      ],
+      [
+        "black",
+        "white"
+      ],
+      [
+        "black",
+        "#f98686"
+      ]
+    ],
+    "seed": 679622081
+  },
+  {
+    "id": 3,
+    "x1": 1,
+    "y1": 10,
+    "x2": 4,
+    "y2": 13,
+    "shape": "aleluia_triangulos",
+    "variant": 6,
+    "color_fundo": "#f98686",
+    "color_padrao": "black",
+    "recolor_count": 14,
+    "last_pairs": [
+      [
+        "white",
+        "black"
+      ],
+      [
+        "white",
+        "black"
+      ],
+      [
+        "#f98686",
+        "black"
+      ]
+    ],
+    "seed": 679621057
+  },
+  {
+    "id": 4,
+    "x1": 1,
+    "y1": 14,
+    "x2": 4,
+    "y2": 14,
+    "shape": "aleluia_triangulos",
+    "variant": 6,
+    "color_fundo": "#f98686",
+    "color_padrao": "black",
+    "recolor_count": 14,
+    "last_pairs": [
+      [
+        "black",
+        "white"
+      ],
+      [
+        "black",
+        "white"
+      ],
+      [
+        "#f98686",
+        "black"
+      ]
+    ],
+    "seed": 679620033
+  },
+  {
+    "id": 5,
+    "x1": 5,
+    "y1": 1,
+    "x2": 8,
+    "y2": 5,
+    "shape": "aleluia_triangulos",
+    "variant": 7,
+    "color_fundo": "#f98686",
+    "color_padrao": "black",
+    "recolor_count": 14,
+    "last_pairs": [
+      [
+        "black",
+        "white"
+      ],
+      [
+        "black",
+        "white"
+      ],
+      [
+        "#f98686",
+        "black"
+      ]
+    ],
+    "seed": 679619009
+  },
+  {
+    "id": 6,
+    "x1": 5,
+    "y1": 6,
+    "x2": 8,
+    "y2": 9,
+    "shape": "aleluia_quadrados",
+    "variant": 4,
+    "color_fundo": "#f98686",
+    "color_padrao": "black",
+    "recolor_count": 14,
+    "last_pairs": [
+      [
+        "white",
+        "black"
+      ],
+      [
+        "white",
+        "black"
+      ],
+      [
+        "#f98686",
+        "black"
+      ]
+    ],
+    "seed": 679617985
+  },
+  {
+    "id": 7,
+    "x1": 5,
+    "y1": 10,
+    "x2": 8,
+    "y2": 13,
+    "shape": "aleluia_triangulos",
+    "variant": 4,
+    "color_fundo": "#f98686",
+    "color_padrao": "black",
+    "recolor_count": 14,
+    "last_pairs": [
+      [
+        "black",
+        "white"
+      ],
+      [
+        "black",
+        "white"
+      ],
+      [
+        "#f98686",
+        "black"
+      ]
+    ],
+    "seed": 679616961
+  },
+  {
+    "id": 8,
+    "x1": 5,
+    "y1": 14,
+    "x2": 8,
+    "y2": 14,
+    "shape": "aleluia_quadrados",
+    "variant": 5,
+    "color_fundo": "#f98686",
+    "color_padrao": "black",
+    "recolor_count": 14,
+    "last_pairs": [
+      [
+        "white",
+        "black"
+      ],
+      [
+        "white",
+        "black"
+      ],
+      [
+        "#f98686",
+        "black"
+      ]
+    ],
+    "seed": 679615937
+  },
+  {
+    "id": 9,
+    "x1": 9,
+    "y1": 1,
+    "x2": 12,
+    "y2": 5,
+    "shape": "aleluia_quadrados",
+    "variant": 2,
+    "color_fundo": "black",
+    "color_padrao": "#f98686",
+    "recolor_count": 14,
+    "last_pairs": [
+      [
+        "black",
+        "white"
+      ],
+      [
+        "black",
+        "white"
+      ],
+      [
+        "black",
+        "#f98686"
+      ]
+    ],
+    "seed": 679614913
+  },
+  {
+    "id": 10,
+    "x1": 9,
+    "y1": 6,
+    "x2": 12,
+    "y2": 9,
+    "shape": "aleluia_triangulos",
+    "variant": 2,
+    "color_fundo": "black",
+    "color_padrao": "#f98686",
+    "recolor_count": 14,
+    "last_pairs": [
+      [
+        "black",
+        "white"
+      ],
+      [
+        "black",
+        "white"
+      ],
+      [
+        "black",
+        "#f98686"
+      ]
+    ],
+    "seed": 679613889
+  },
+  {
+    "id": 11,
+    "x1": 9,
+    "y1": 10,
+    "x2": 12,
+    "y2": 13,
+    "shape": "aleluia_quadrados",
+    "variant": 9,
+    "color_fundo": "#f98686",
+    "color_padrao": "black",
+    "recolor_count": 14,
+    "last_pairs": [
+      [
+        "black",
+        "white"
+      ],
+      [
+        "black",
+        "white"
+      ],
+      [
+        "#f98686",
+        "black"
+      ]
+    ],
+    "seed": 679612865
+  },
+  {
+    "id": 12,
+    "x1": 9,
+    "y1": 14,
+    "x2": 12,
+    "y2": 14,
+    "shape": "aleluia_quadrados",
+    "variant": 6,
+    "color_fundo": "black",
+    "color_padrao": "#f98686",
+    "recolor_count": 14,
+    "last_pairs": [
+      [
+        "black",
+        "white"
+      ],
+      [
+        "black",
+        "white"
+      ],
+      [
+        "black",
+        "#f98686"
+      ]
+    ],
+    "seed": 679611841
+  },
+  {
+    "id": 13,
+    "x1": 13,
+    "y1": 1,
+    "x2": 14,
+    "y2": 5,
+    "shape": "aleluia_triangulos",
+    "variant": 2,
+    "color_fundo": "#f98686",
+    "color_padrao": "black",
+    "recolor_count": 14,
+    "last_pairs": [
+      [
+        "black",
+        "white"
+      ],
+      [
+        "black",
+        "white"
+      ],
+      [
+        "#f98686",
+        "black"
+      ]
+    ],
+    "seed": 679610817
+  },
+  {
+    "id": 14,
+    "x1": 13,
+    "y1": 6,
+    "x2": 14,
+    "y2": 10,
+    "shape": "aleluia_triangulos",
+    "variant": 3,
+    "color_fundo": "black",
+    "color_padrao": "#f98686",
+    "recolor_count": 14,
+    "last_pairs": [
+      [
+        "white",
+        "black"
+      ],
+      [
+        "white",
+        "black"
+      ],
+      [
+        "black",
+        "#f98686"
+      ]
+    ],
+    "seed": 679609793
+  },
+  {
+    "id": 15,
+    "x1": 13,
+    "y1": 11,
+    "x2": 14,
+    "y2": 14,
+    "shape": "aleluia_triangulos",
+    "variant": 6,
+    "color_fundo": "black",
+    "color_padrao": "#f98686",
+    "recolor_count": 14,
+    "last_pairs": [
+      [
+        "white",
+        "black"
+      ],
+      [
+        "white",
+        "black"
+      ],
+      [
+        "black",
+        "#f98686"
+      ]
+    ],
+    "seed": 679608769
+  }
+]

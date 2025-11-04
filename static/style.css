@@ -41,6 +41,7 @@ h1 {
 #patternArea {
   flex: 1 1 auto;
   display: flex;
+  flex-direction: column; /* stack palette above canvas */
   align-items: center;
   margin-bottom: 3vh;
   justify-content: center;
@@ -68,7 +69,7 @@ h1 {
   padding: 8px 12px;
   background: linear-gradient(to top, rgba(255,255,255,0.95), rgba(255,255,255,0.6));
   box-shadow: 0 -6px 18px rgba(0,0,0,0.12);
-  z-index: 300; /* above canvas but below modals/overlays which use higher z */
+  z-index: 300; /* above canvas; floating bars are kept below this unless explicitly raised */
   backdrop-filter: blur(4px);
   transition: transform 280ms ease, opacity 200ms ease;
   transform: translateY(0);
@@ -95,10 +96,85 @@ h1 {
   pointer-events: none;
 }
 #controls .btn-row { display:flex; gap:8px; align-items:center; }
+/* Grid row to center Generate between Back and Forward */
+.btn-row-grid {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  max-width: 900px;
+}
+.btn-row-grid #backBtn { justify-self: start; }
+.btn-row-grid .center-group { justify-self: center; display:flex; align-items:center; gap:8px; }
+.btn-row-grid #forwardBtn { justify-self: end; }
 
 /* Ensure patternArea content doesn't get hidden by the fixed controls: add bottom inset */
 /* small fallback padding in case JS doesn't run; actual reserved space is computed dynamically */
 #patternArea { padding-bottom: 12px; }
+
+/* Fixed palette bar inside the pattern area */
+#paletteBar {
+  position: relative; /* in-flow above canvas */
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.92);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.18);
+  z-index: 250; /* sits above background but not over controls */
+  max-width: calc(100% - 16px);
+  overflow-x: auto;
+  white-space: nowrap;
+  margin-bottom: 8px; /* space from canvas */
+}
+
+/* Fixed shape bar under the pattern */
+#shapeBar {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.92);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.18);
+  z-index: 1250; /* above the small handle, but below modals */
+  max-width: calc(100% - 16px);
+}
+
+/* Fixed zoom slider at top-right (vertical top->bottom) */
+#zoomBar {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 250; /* below fixed controls and settings overlay */
+  padding: 6px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.92);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.18);
+  /* Constrain the visual slider so it doesn't spill over the canvas */
+  width: 36px;
+  height: 150px; /* compact viewport height as requested */
+  box-sizing: content-box;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+#zoomBar input[type="range"] {
+  transform: rotate(-90deg); /* counter-clockwise so top->bottom increases */
+  transform-origin: center;
+  width: 420px;  /* travel distance (pre-rotation width becomes vertical length) */
+  height: 28px;  /* thickness */
+}
+/* Nicer, smaller thumb size for better aesthetics */
+#zoomBar input[type="range"]::-webkit-slider-thumb { width: 22px; height: 22px; }
+#zoomBar input[type="range"]::-moz-range-thumb { width: 22px; height: 22px; }
 
 @media (min-width: 900px) {
   /* On wide screens, show controls inline (not necessarily fixed) — keep small constant bar */
@@ -109,7 +185,7 @@ h1 {
   top: 0; left: 0; width: 100vw; height: 100vh;
   background: #222e;
   display: none;
-  z-index: 1000;
+  z-index: 3000; /* ensure it sits above any floating bars */
   align-items: center;
   justify-content: center;
   animation: fadeIn 0.3s;
@@ -144,7 +220,7 @@ h1 {
   font-size: 1.1em;
   font-weight: bold;
   cursor: pointer;
-  z-index: 101;
+  z-index: 2000; /* ensure above floating bars */
   box-shadow: -2px 2px 10px #0006;
   transition: background 0.2s;
   display: flex;
@@ -240,24 +316,28 @@ h1 {
   }
   .form-section label { min-width: 80px; font-size: 0.95em; }
   #showSettingsTab { font-size: 1em; padding: 10px 18px 10px 8px; }
+  /* Larger hit targets on mobile */
+  .switch-option { padding:10px 14px; font-size:1.05em; }
+  input[type="range"] { height: 36px; }
+  /* Slider thumbs */
+  input[type="range"]::-webkit-slider-thumb { width: 28px; height: 28px; }
+  input[type="range"]::-moz-range-thumb { width: 28px; height: 28px; }
+  #zoomBar { height: 150px; }
+  #zoomBar input[type="range"] { width: 340px; height: 26px; }
 }
-/* Potentiometer styles (fixed on right) */
-#potentiometer {
-  position: fixed;
-  right: 18px;
-  top: 20%;
-  transform: translateY(-50%);
-  width: 96px;
-  height: 96px;
-  z-index: 1100;
-  cursor: pointer;
-  user-select: none;
-  touch-action: none;
+/* Input rows in the controls bar */
+.input-row { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+input[type="range"] { accent-color: #4caf50; }
+/* Switch as labeled options */
+.switch-group { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.switch-radio { position:absolute; opacity:0; width:0; height:0; }
+.switch-option {
+  display:inline-flex; align-items:center; gap:6px;
+  padding:6px 10px; border-radius:999px; border:1px solid #bbb; cursor:pointer;
+  user-select:none; font-family:"Rajdhani",sans-serif; font-weight:600;
+  background: #fff;
 }
-#potentiometer img { position: absolute; left: 0; top: 0; width: 100%; height: 100%; pointer-events: none; }
-#potentiometer #pot_front { transform-origin: 50% 50%; transition: transform 120ms linear; transform: translate(25%,25%) scale(0.5); }
-/* Hide the settings knob input visually but keep it in the DOM for accessibility */
-#settingsForm input[type="range"]#knob_down { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
+.switch-radio:checked + .switch-option { border-color:#4caf50; background:#eaf8ec; box-shadow:0 0 0 2px #4caf5033 inset; }
 
 /* Generating indicator styles */
 .gen-indicator {
@@ -320,3 +400,17 @@ h1 {
 .toast .close { margin-left: auto; cursor: pointer; opacity: 0.6; }
 .toast .close:hover { opacity: 1; }
 @keyframes toastIn { from { transform: translateY(-6px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+/* Defer interactivity of floating bars until JS positions them */
+#paletteBar, #shapeBar, #zoomBar { opacity: 0; pointer-events: none; transition: opacity 140ms ease; }
+.pattern-ui-ready #paletteBar,
+.pattern-ui-ready #shapeBar,
+.pattern-ui-ready #zoomBar { opacity: 1; pointer-events: auto; }
+
+/* When settings are open, nudge the shape bar up so it doesn't occlude the settings affordances */
+.settings-open #shapeBar { bottom: 56px; }
+/* When controls are visible (big bar shown), lift shape bar above the bar */
+.controls-visible #shapeBar { bottom: 56px; }
+
+/* When settings are open, nudge the shape bar up so it doesn't occlude the settings affordances */
+.settings-open #shapeBar { bottom: 56px; }

@@ -93,11 +93,11 @@ function renderButtonInputs(data) {
 async function fillForm() {
   const raw = await loadJSON('data.json');
   const data = Object.assign({}, raw || {});
-  // Ensure knob/slider/switch/canvas fields exist
-  document.getElementById('knob_down').value = data.knob_down || 1;
-  document.getElementById('zoomValue').textContent = data.knob_down || 1;
-  document.getElementById('slider').value = data.slider || 0;
-  document.getElementById('sliderValue').textContent = data.slider || 0;
+  // Ensure knob/switch/canvas fields exist; slider is fixed at 50 and has no UI
+  const knobEl = document.getElementById('knob_down');
+  if (knobEl) knobEl.value = data.knob_down || 1;
+  const zv = document.getElementById('zoomValue');
+  if (zv) zv.textContent = (data.knob_down || 1);
   if (data.switch === 'left') document.getElementById('switch_left').checked = true;
   else if (data.switch === 'right') document.getElementById('switch_right').checked = true;
   else document.getElementById('switch_center').checked = true;
@@ -142,15 +142,23 @@ async function fillForm() {
   }
 }
 
-// Update zoom slider value display
-document.getElementById('knob_down').oninput = function() {
-  document.getElementById('zoomValue').textContent = this.value;
-};
+// Update zoom slider value display (guard if element exists)
+const knobInitEl = document.getElementById('knob_down');
+if (knobInitEl) {
+  knobInitEl.oninput = function() {
+    const zv = document.getElementById('zoomValue');
+    if (zv) zv.textContent = this.value;
+  };
+}
 
 // Update slider value display
-document.getElementById('slider').oninput = function() {
-  document.getElementById('sliderValue').textContent = this.value;
-};
+  const sliderEl0 = document.getElementById('slider');
+  if (sliderEl0) {
+    sliderEl0.oninput = function() {
+      const sv = document.getElementById('sliderValue');
+      if (sv) sv.textContent = this.value;
+    };
+  }
 
   async function saveSettings(data) {
     await postJSON('/data.json', data);
@@ -160,14 +168,14 @@ document.getElementById('slider').oninput = function() {
   function buildSettingsFromForm() {
     const data = {};
     data.knob_down = parseInt(document.getElementById('knob_down').value);
-    data.slider = parseInt(document.getElementById('slider').value);
+  data.slider = 50; // fixed per new requirement
     const sw = document.querySelector('input[name="switch"]:checked');
     data.switch = sw ? sw.value : 'center';
     data.canvas_width = parseInt(document.getElementById('canvas_width').value);
     data.canvas_height = parseInt(document.getElementById('canvas_height').value);
     for (let i = 0; i <= 9; i++) {
       const btnKey = `button_${i}`;
-      const swatch = document.getElementById(btnKey + '_swatch');
+  const swatch = document.getElementById(btnKey + '_swatch');
       const color = (swatch && swatch.dataset && swatch.dataset.color) ? swatch.dataset.color : DEFAULT_BUTTON_COLORS[i];
       const state = (swatch && !swatch.classList.contains('inactive')) ? "on" : "off";
       data[btnKey] = { state: state, color: color };
@@ -200,9 +208,33 @@ document.getElementById('slider').oninput = function() {
 // Attach auto-save to all inputs in the form
 function attachAutoSave() {
   const form = document.getElementById('settingsForm');
-  form.querySelectorAll('input').forEach(input => {
-    input.oninput = autoSaveAndGenerate;
-    input.onchange = autoSaveAndGenerate;
+  if (form) {
+    form.querySelectorAll('input').forEach(input => {
+      // Only width/height remain in the form; still autosave/generate on change
+      input.oninput = autoSaveAndGenerate;
+      input.onchange = autoSaveAndGenerate;
+    });
+  }
+  // Also attach listeners for inputs now on the main screen
+  const sliderEl = document.getElementById('slider');
+  if (sliderEl) {
+    // Keep for safety if element exists, but slider is removed from UI now
+    sliderEl.value = 50;
+    const sv = document.getElementById('sliderValue');
+    if (sv) sv.textContent = 50;
+    sliderEl.onchange = autoSaveAndGenerate;
+  }
+  const knobEl = document.getElementById('knob_down');
+  if (knobEl) {
+    knobEl.oninput = () => {
+      const zv = document.getElementById('zoomValue');
+      if (zv) zv.textContent = knobEl.value;
+    };
+    // Save on release
+    knobEl.onchange = autoSaveAndGenerate;
+  }
+  document.querySelectorAll('input[name="switch"]').forEach(r => {
+    r.onchange = autoSaveAndGenerate;
   });
 }
 
@@ -359,6 +391,9 @@ ctx.fillRect(0, 0, canvas.width, canvas.height);
   });
   // After drawing, ensure the canvas CSS is sized to fit the patternArea
   recomputeCanvasSize();
+  // Once layout is synced, enable floating bar interactivity
+  const areaReady1 = document.getElementById('patternArea');
+  if (areaReady1) areaReady1.classList.add('pattern-ui-ready');
 }
 
 // Pattern history management
@@ -569,6 +604,9 @@ async function drawPatternFromHistory(idx) {
    updateHistoryButtons();
   // ensure canvas CSS fits the patternArea after drawing history
   recomputeCanvasSize();
+  // Enable floating bars once positioned for history draws too
+  const areaReady2 = document.getElementById('patternArea');
+  if (areaReady2) areaReady2.classList.add('pattern-ui-ready');
  }
  
  // On new generation, always append to end of history (never erase forward)
@@ -682,7 +720,7 @@ document.getElementById('forwardBtn').onclick = function() {
 async function autoSaveAndGenerate() {
   const data = {};
   data.knob_down = parseInt(document.getElementById('knob_down').value);
-  data.slider = parseInt(document.getElementById('slider').value);
+  data.slider = 50; // fixed bias per requirement
   data.switch = document.querySelector('input[name="switch"]:checked').value;
   data.canvas_width = parseInt(document.getElementById('canvas_width').value);
   data.canvas_height = parseInt(document.getElementById('canvas_height').value);
@@ -715,16 +753,19 @@ const settingsPanel = document.getElementById('settingsPanel');
 showSettingsTab.onclick = function() {
   settingsOverlay.style.display = 'flex';
   showSettingsTab.style.display = 'none';
+  document.body.classList.add('settings-open');
 };
 closeSettingsBtn.onclick = function() {
   settingsOverlay.style.display = 'none';
   showSettingsTab.style.display = 'flex';
+  document.body.classList.remove('settings-open');
 };
 // Click outside panel closes overlay
 settingsOverlay.onclick = function(e) {
   if (e.target === settingsOverlay) {
     settingsOverlay.style.display = 'none';
     showSettingsTab.style.display = 'flex';
+    document.body.classList.remove('settings-open');
   }
 };
 
@@ -851,6 +892,9 @@ function recomputeCanvasSize() {
   if (iw && ih) applyCanvasDisplaySize(canvas, iw, ih);
   // keep overlay aligned with the canvas
   if (typeof syncOverlayToCanvas === 'function') syncOverlayToCanvas();
+  // Mark UI ready on any subsequent layout updates as well
+  const areaReady3 = document.getElementById('patternArea');
+  if (areaReady3) areaReady3.classList.add('pattern-ui-ready');
 }
 window.addEventListener('resize', recomputeCanvasSize);
 // Observe patternArea size changes (use ResizeObserver if available)
@@ -871,6 +915,9 @@ function syncOverlayToCanvas() {
   const area = document.getElementById('patternArea');
   const canvas = document.getElementById('patternCanvas');
   const overlay = document.getElementById('overlayCanvas');
+  const paletteBar = document.getElementById('paletteBar');
+  const shapeBar = document.getElementById('shapeBar');
+  const zoomBar = document.getElementById('zoomBar');
   if (!area || !canvas || !overlay) return;
   const areaRect = area.getBoundingClientRect();
   const canvasRect = canvas.getBoundingClientRect();
@@ -888,145 +935,32 @@ function syncOverlayToCanvas() {
   // clear any previous drawings when size changes
   const octx = overlay.getContext('2d');
   octx.clearRect(0, 0, overlay.width, overlay.height);
+
+  // Align floating UI elements to the visible canvas, not the whole area
+  const baseLeft = Math.round(canvasRect.left - areaRect.left);
+  const baseTop = Math.round(canvasRect.top - areaRect.top);
+  // Palette bar is now in-flow above the canvas; do not set absolute positioning here
+  // Shape bar centered at bottom edge of canvas
+  if (shapeBar) {
+    const pxLeft = baseLeft + Math.round(cssW / 2);
+    shapeBar.style.left = pxLeft + 'px';
+    // Do not set top here; rely on CSS bottom positioning for robustness
+    shapeBar.style.top = '';
+    shapeBar.style.transform = 'translateX(-50%)';
+    // Preserve CSS bottom/right from stylesheet
+  }
+  // Zoom bar pinned to top-right of canvas
+  if (zoomBar) {
+    const pyTop = baseTop + 8; // keep top aligned with canvas
+    // Do not set left; keep CSS right anchoring
+    zoomBar.style.left = '';
+    zoomBar.style.top = pyTop + 'px';
+    zoomBar.style.transform = ''; // no centering for corner pin
+    // Preserve CSS right/bottom from stylesheet
+  }
 }
 
-// ---- Potentiometer UI: smoother dragging + single save on release ----
-(function(){
-  const min = 1, max = 10;
-  const knob = document.getElementById('knob_down');
-  const potFront = document.getElementById('pot_front');
-  const pot = document.getElementById('potentiometer');
-  if (!knob || !potFront || !pot) return;
-
-  function valueToRatio(v){
-    return (v - min) / (max - min);
-  }
-  function ratioToAngle(r){
-    return -135 + r * 270; // returns angle in [-135,135]
-  }
-
-  // sweep geometry (we'll operate with a normalized "extended" angle range to avoid seam ambiguity)
-  const sweepStart = 225; // equivalent of -135
-  const sweepSpan = 270;  // degrees
-  const sweepEnd = sweepStart + sweepSpan; // 225..495 in extended domain
-
-  // initialize from existing input value
-  const initialVal = parseInt(knob.value || min, 10);
-  let currentRatio = Math.max(0, Math.min(1, valueToRatio(initialVal)));
-  // compute lastAngleNormalized in the extended domain [sweepStart, sweepEnd]
-  let lastAngleNorm = ratioToAngle(currentRatio);
-  // convert lastAngleNorm (which is -135..135) into extended domain 225..495
-  if (lastAngleNorm < sweepStart) lastAngleNorm += 360;
-  // apply initial visible transform
-  potFront.style.transform = `rotate(${ratioToAngle(currentRatio)}deg) scale(0.5)`;
-
-  // smoother interaction: update transform continuously, only persist when user releases
-  let dragging = false;
-  let rafPending = false;
-  let targetDisplayAngle = ratioToAngle(currentRatio);
-  let targetNormalizedAngle = lastAngleNorm;
-
-  function applyTransform(displayAngle, normalizedAngle){
-    // apply rotation + keep scale
-    potFront.style.transform = `rotate(${displayAngle}deg) scale(0.5)`;
-    // remember normalized angle so small moves across the seam pick the nearest arc
-    if (typeof normalizedAngle === 'number') lastAngleNorm = normalizedAngle;
-  }
-
-  function pagePos(e){
-    if (e.touches && e.touches[0]) return {x: e.touches[0].clientX, y: e.touches[0].clientY};
-    return {x: e.clientX, y: e.clientY};
-  }
-
-  // Convert a pointer page position into a ratio [0..1]. Uses lastAngleNorm to disambiguate
-  // angles near the seam so movement stays continuous relative to where the knob currently is.
-  function pointerToRatioAndAngles(p){
-    const rect = pot.getBoundingClientRect();
-    const cx = rect.left + rect.width/2;
-    const cy = rect.top + rect.height/2;
-    const ang = (Math.atan2(p.y - cy, p.x - cx) * 180 / Math.PI + 360) % 360; // 0..360
-
-    // Lift candidate into the same extended domain as lastAngleNorm so we can choose the nearest wrap
-    let candidate = ang;
-    if (candidate < sweepStart) candidate += 360; // now candidate approximately in [sweepStart, sweepStart+360)
-
-    // Choose the candidate (possibly shifted by +/-360) that's closest to lastAngleNorm
-    // Try adjustments of -360, 0, +360 and pick minimal delta
-    const candidates = [candidate - 360, candidate, candidate + 360];
-    let best = candidates[0];
-    let bestDelta = Math.abs(candidates[0] - lastAngleNorm);
-    for (let i = 1; i < candidates.length; i++){
-      const d = Math.abs(candidates[i] - lastAngleNorm);
-      if (d < bestDelta) { bestDelta = d; best = candidates[i]; }
-    }
-
-    // Clamp into sweep range
-    const clamped = Math.max(sweepStart, Math.min(sweepEnd, best));
-    const ratio = Math.max(0, Math.min(1, (clamped - sweepStart) / sweepSpan));
-
-    // convert clamped back to a displayable angle in [-180,180] for CSS rotate
-    let display = clamped;
-    if (display > 360) display -= 360;
-    // ensure display is within [-180,180] (not strictly necessary, but keeps values sane)
-    if (display > 180) display -= 360;
-
-    return { ratio: ratio, displayAngle: display, normalizedAngle: clamped };
-  }
-
-  function scheduleApply(displayAngle, normalizedAngle){
-    targetDisplayAngle = displayAngle;
-    targetNormalizedAngle = normalizedAngle;
-    if (rafPending) return;
-    rafPending = true;
-    requestAnimationFrame(()=>{
-      applyTransform(targetDisplayAngle, targetNormalizedAngle);
-      rafPending = false;
-    });
-  }
-
-  function updateFromPointer(e){
-    const p = pagePos(e);
-    const result = pointerToRatioAndAngles(p);
-    currentRatio = result.ratio;
-    // While dragging, remove transitions so the front follows the finger precisely
-    if (!rafPending) scheduleApply(result.displayAngle, result.normalizedAngle);
-  }
-
-  function onPointerDown(e){
-    dragging = true;
-    potFront.style.transition = 'none';
-    if (e.pointerId) pot.setPointerCapture && pot.setPointerCapture(e.pointerId);
-    updateFromPointer(e);
-  }
-
-  function onPointerUp(e){
-    if (!dragging) return;
-    dragging = false;
-    // restore CSS transition for a smooth settle
-    potFront.style.transition = 'transform 120ms linear';
-    // compute final integer value and persist
-    const finalVal = Math.round(min + currentRatio * (max - min));
-    knob.value = finalVal;
-    // apply final transform (with transition)
-    const finalRatio = Math.max(0, Math.min(1, valueToRatio(finalVal)));
-    const finalAngle = ratioToAngle(finalRatio);
-    // normalize to extended domain for lastAngleNorm bookkeeping
-    let finalNorm = finalAngle;
-    if (finalNorm < sweepStart) finalNorm += 360;
-    applyTransform(finalAngle, finalNorm);
-    try{ autoSaveAndGenerate(); }catch(e){}
-  }
-
-  // attach pointer events
-  pot.addEventListener('pointerdown', onPointerDown);
-  window.addEventListener('pointermove', (e)=>{ if (dragging) updateFromPointer(e); });
-  window.addEventListener('pointerup', onPointerUp);
-
-  // touch fallback
-  pot.addEventListener('touchstart', (e)=>{ onPointerDown(e.touches ? e.touches[0] : e); e.preventDefault(); }, {passive:false});
-  window.addEventListener('touchmove', (e)=>{ if (dragging) { updateFromPointer(e.touches ? e.touches[0] : e); e.preventDefault(); } }, {passive:false});
-  window.addEventListener('touchend', (e)=>{ onPointerUp(e.changedTouches ? e.changedTouches[0] : e); });
-})();
+// Zoom slider replaces image-based potentiometer; handled via #knob_down input in attachAutoSave
 // Auto-hide controls on small screens: show on interaction, hide after idle
 (function(){
   const controls = document.getElementById('controls');
@@ -1046,6 +980,8 @@ function syncOverlayToCanvas() {
     controls.classList.add('visible');
     handle.style.opacity = '0';
     handle.style.pointerEvents = 'none';
+    // Mark controls visible so shape bar lifts above controls bar
+    document.body.classList.add('controls-visible');
   }
 
   function hideControls() {
@@ -1054,6 +990,8 @@ function syncOverlayToCanvas() {
     controls.classList.remove('visible');
     handle.style.opacity = '1';
     handle.style.pointerEvents = 'auto';
+    // Controls hidden -> drop the lift
+    document.body.classList.remove('controls-visible');
   }
 
   function resetIdle() {
