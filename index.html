@@ -1191,11 +1191,76 @@
       return instructions.join('\n');
     }
 
-    // Print button logic
-    document.getElementById('printBtn').onclick = function() {
+    // Export current pattern as a JPEG image (fits within device capabilities)
+    async function exportPatternJPEG(pattern, data, filename = 'pepe_pattern.jpg', quality = 0.92) {
+      try {
+        const intrinsicW = parseInt((data && data.canvas_width) || 500);
+        const intrinsicH = parseInt((data && data.canvas_height) || 500);
+        const limited = ensureCanvasSizeWithinLimits(intrinsicW, intrinsicH);
+        const outW = Math.max(1, limited.width);
+        const outH = Math.max(1, limited.height);
+
+        // Offscreen canvas render
+        const off = document.createElement('canvas');
+        off.width = outW; off.height = outH;
+        const ctx = off.getContext('2d');
+        // white background
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(0, 0, outW, outH);
+
+        // Layout same as drawPattern but using export dimensions
+        let maxX = 0, maxY = 0;
+        pattern.forEach(tile => {
+          if (tile.grid_x > maxX) maxX = tile.grid_x;
+          if (tile.grid_y > maxY) maxY = tile.grid_y;
+        });
+        const cols = Math.max(1, maxX);
+        const rows = Math.max(1, maxY);
+        const tileSize = Math.min(outW / cols, outH / rows);
+        const margin = tileSize * TILE_MARGIN_RATIO;
+        const drawSize = tileSize - margin;
+        const offsetX = (outW - tileSize * cols) / 2;
+        const offsetY = (outH - tileSize * rows) / 2;
+
+        pattern.forEach(tile => {
+          const x = offsetX + (tile.grid_x - 1) * tileSize + margin / 2;
+          const y = offsetY + (tile.grid_y - 1) * tileSize + margin / 2;
+          drawTile(ctx, tile, x, y, drawSize);
+        });
+
+        const doDownload = (blob) => {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url; a.download = filename;
+          document.body.appendChild(a);
+          a.click();
+          setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 250);
+        };
+
+        if (off.toBlob) {
+          off.toBlob((blob) => { if (blob) doDownload(blob); }, 'image/jpeg', quality);
+        } else {
+          const dataUrl = off.toDataURL('image/jpeg', quality);
+          // Convert dataURL to Blob
+          const byteString = atob(dataUrl.split(',')[1]);
+          const mimeString = dataUrl.split(',')[0].split(':')[1].split(';')[0];
+          const ab = new ArrayBuffer(byteString.length);
+          const ia = new Uint8Array(ab);
+          for (let i = 0; i < byteString.length; i++) ia[i] = byteString.charCodeAt(i);
+          doDownload(new Blob([ab], { type: mimeString }));
+        }
+      } catch (e) {
+        console.warn('exportPatternJPEG failed', e);
+        showToast('Could not export JPG.', 'error');
+      }
+    }
+
+    // Print button logic — now also downloads a JPG snapshot of the pattern
+    document.getElementById('printBtn').onclick = async function() {
       const entry = patternHistory[historyIndex];
       // Prefer the currently drawn pattern to guarantee latest edits are included
       const pattern = (currentPattern && currentPattern.length) ? currentPattern : (entry ? (entry.pattern || entry) : []);
+      // 1) Download instructions txt
       const instructions = getDrawingInstructions(pattern);
       const blob = new Blob([instructions], { type: 'text/plain' });
       const url = URL.createObjectURL(blob);
@@ -1208,6 +1273,11 @@
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
       }, 100);
+
+      // 2) Also export a JPG of the pattern drawing
+      let data;
+      try { data = await loadJSON('data.json'); } catch(e) { data = { canvas_width: 500, canvas_height: 500 }; }
+      await exportPatternJPEG(pattern, data, 'pepe_pattern.jpg', 0.92);
     };
 
     // Keep displayed canvas scaled properly when the window resizes
