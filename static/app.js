@@ -890,17 +890,88 @@ window.addEventListener('resize', async () => {
 })();
 
 // Initial load
+// One-time bootstrap to avoid empty first screen: set size to screen ratio,
+// enable 5 random colors, set mid zoom, and auto-generate once.
+async function firstRunBootstrap() {
+  try {
+    // Skip if already done for this browser/device
+    if (localStorage.getItem('firstRunDone') === '1') return false;
+    // Determine viewport for sizing (prefer patternArea if present)
+    const area = document.getElementById('patternArea');
+    const rect = area ? area.getBoundingClientRect() : { width: window.innerWidth, height: window.innerHeight };
+    const vw = Math.max(1, Math.round(rect.width || window.innerWidth || 1));
+    const vh = Math.max(1, Math.round(rect.height || window.innerHeight || 1));
+    // Choose a generous intrinsic long side; backing buffer is limited to visible size so this is safe.
+    const LONG_MM = 8000;
+    let widthMm, heightMm;
+    if (vw >= vh) {
+      widthMm = LONG_MM;
+      heightMm = Math.max(1000, Math.round(LONG_MM * (vh / vw)));
+    } else {
+      heightMm = LONG_MM;
+      widthMm = Math.max(1000, Math.round(LONG_MM * (vw / vh)));
+    }
+    // Clamp to a reasonable upper bound
+    widthMm = Math.min(12000, widthMm);
+    heightMm = Math.min(12000, heightMm);
+
+    // Start from current data to preserve user colors if any
+    let cur = {};
+    try { cur = await loadJSON('data.json'); } catch (e) { cur = {}; }
+    const out = {};
+    out.canvas_width = widthMm;
+    out.canvas_height = heightMm;
+    const dynMax = computeZoomMaxForDims(widthMm, heightMm);
+    out.knob_down = Math.max(1, Math.round(dynMax / 2));
+    out.slider = 50;
+    out.switch = 'center';
+    // Pick 5 random active colors; keep the saved color values
+    const idx = Array.from({ length: 10 }, (_, i) => i);
+    for (let i = idx.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); const t = idx[i]; idx[i] = idx[j]; idx[j] = t; }
+    const active = new Set(idx.slice(0, 5));
+    for (let i = 0; i < 10; i++) {
+      const key = `button_${i}`;
+      const v = cur && cur[key];
+      let color = DEFAULT_BUTTON_COLORS[i];
+      if (typeof v === 'string') {
+        if (v !== 'off') color = v;
+      } else if (v && typeof v === 'object' && v.color) {
+        color = v.color;
+      }
+      out[key] = { state: active.has(i) ? 'on' : 'off', color };
+    }
+
+    // Save and refresh UI, then generate once
+    await postJSON('/data.json', out);
+    await fillForm();
+    attachAutoSave();
+    await generateAndSaveHistory();
+    try { localStorage.setItem('firstRunDone', '1'); } catch (e) { /* ignore */ }
+    showToast('Initialized with a starting pattern.', 'success');
+    return true;
+  } catch (e) {
+    console.warn('firstRunBootstrap failed', e);
+    return false;
+  }
+}
+
 // Ensure session cookie mirrors localStorage on every load before requests start
 ensureSessionId();
-fillForm().then(attachAutoSave);
-loadHistory();
-updateGenIndicator();
-// If history exists, draw last pattern, else draw current
-if (patternHistory.length > 0) {
-  drawPatternFromHistory(historyIndex);
-} else {
-  drawPattern();
-}
+(async function initialLoad(){
+  await fillForm();
+  attachAutoSave();
+  loadHistory();
+  updateGenIndicator();
+  if (patternHistory.length > 0) {
+    drawPatternFromHistory(historyIndex);
+  } else {
+    const booted = await firstRunBootstrap();
+    if (!booted) {
+      // Fallback: draw whatever is in pattern.json (may be empty)
+      await drawPattern();
+    }
+  }
+})();
 
 // Generate drawing instructions from a pattern array
 function getDrawingInstructions(pattern) {
