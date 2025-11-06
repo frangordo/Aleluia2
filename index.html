@@ -24,19 +24,9 @@
       <!-- Overlay canvas for selection visualization -->
       <canvas id="overlayCanvas" style="position:absolute; left:0; top:0; pointer-events:none;"></canvas>
       <!-- Fixed shape switch under the pattern area -->
-      <div id="shapeBar" role="group" aria-label="Shape selector">
-        <span class="switch-group">
-          <input type="radio" id="switch_left" class="switch-radio" name="switch" value="left">
-          <label for="switch_left" class="switch-option" title="Squares">⬛ Squares</label>
-          <input type="radio" id="switch_center" class="switch-radio" name="switch" value="center">
-          <label for="switch_center" class="switch-option" title="Mix">🔀 Mix</label>
-          <input type="radio" id="switch_right" class="switch-radio" name="switch" value="right">
-          <label for="switch_right" class="switch-option" title="Triangles">△ Triangles</label>
-        </span>
-      </div>
       <!-- Fixed zoom slider at the top-right of the pattern area -->
       <div id="zoomBar" aria-label="Zoom">
-        <input type="range" id="knob_down" name="knob_down" min="1" max="10" step="1">
+          <input type="range" id="knob_down" name="knob_down" min="1" max="100" step="1">
       </div>
     </div>
     <div id="controls">
@@ -56,25 +46,36 @@
         <button id="recolorAllBtn" title="Recolor all regions using active palette">🎨 Recolor All</button>
         <button id="printBtn">🖨️ Print Instructions</button>
       </div>
+      <!-- Shape selector moved into controls as the last row -->
+      <div id="shapeBar" role="group" aria-label="Shape selector" class="btn-row">
+        <span class="switch-group">
+          <input type="radio" id="switch_left" class="switch-radio" name="switch" value="left">
+          <label for="switch_left" class="switch-option" title="Squares">⬛ Squares</label>
+          <input type="radio" id="switch_center" class="switch-radio" name="switch" value="center">
+          <label for="switch_center" class="switch-option" title="Mix">🔀 Mix</label>
+          <input type="radio" id="switch_right" class="switch-radio" name="switch" value="right">
+          <label for="switch_right" class="switch-option" title="Triangles">△ Triangles</label>
+        </span>
+      </div>
       <!-- Main inputs moved to pattern area (palette, shape, zoom) -->
     </div>
     <!-- Small handle to reveal hidden controls on mobile -->
     <div id="controlsHandle" title="Show controls" aria-hidden="true"></div>
   </div>
   <div id="showSettingsTab">
-    <span style="font-size:1.3em;">&#9654;</span> PepesMachine
+    <span style="font-size:1.3em;">&#9654;</span> Size
   </div>
   <div id="settingsOverlay">
     <div id="settingsPanel">
-      <button id="closeSettingsBtn">&#8592; Back to Canvas</button>
+      <button id="closeSettingsBtn" aria-label="Close settings" title="Close">✕</button>
       <form id="settingsForm" class="form-section">
         <div class="form-row">
-          <label for="canvas_width">Canvas Width:</label>
-          <input type="number" id="canvas_width" name="canvas_width" min="10" max="900000" required>
+          <label for="canvas_width">Canvas Width (cm):</label>
+          <input type="number" id="canvas_width" name="canvas_width" min="1" max="90000" step="1" required>
         </div>
         <div class="form-row">
-          <label for="canvas_height">Canvas Height:</label>
-          <input type="number" id="canvas_height" name="canvas_height" min="10" max="900000" required>
+          <label for="canvas_height">Canvas Height (cm):</label>
+          <input type="number" id="canvas_height" name="canvas_height" min="1" max="90000" step="1" required>
         </div>
         <!-- Removed the Save Settings button -->
       </form>

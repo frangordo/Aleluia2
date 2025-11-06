@@ -25,6 +25,15 @@ async function loadJSON(url) {
   return await resp.json();
 }
 
+// Determine zoom max based on intrinsic canvas size (mm)
+function computeZoomMaxForDims(widthMm, heightMm) {
+  const m = Math.max(parseInt(widthMm || 0, 10), parseInt(heightMm || 0, 10));
+  if (m < 2000) return 10;      // < 2000 x 2000 -> 1..10
+  if (m < 5000) return 20;      // < 5000 x 5000 -> 1..20
+  if (m < 10000) return 50;     // < 10000 x 10000 -> 1..50
+  return 100;                   // otherwise 1..100
+}
+
 // Helper to POST JSON
 async function postJSON(url, data) {
   await fetch(url, {
@@ -95,14 +104,26 @@ async function fillForm() {
   const data = Object.assign({}, raw || {});
   // Ensure knob/switch/canvas fields exist; slider is fixed at 50 and has no UI
   const knobEl = document.getElementById('knob_down');
-  if (knobEl) knobEl.value = data.knob_down || 1;
+  if (knobEl) {
+    knobEl.value = data.knob_down || 1;
+    // Apply dynamic zoom range based on intrinsic mm size from data.json
+    const zMax = computeZoomMaxForDims(data.canvas_width || 500, data.canvas_height || 500);
+    knobEl.min = '1';
+    knobEl.max = String(zMax);
+    // Clamp current value within the new range
+    const v = Math.max(1, Math.min(zMax, parseInt(knobEl.value || '1', 10)));
+    if (v !== parseInt(knobEl.value || '1', 10)) {
+      knobEl.value = String(v);
+    }
+  }
   const zv = document.getElementById('zoomValue');
   if (zv) zv.textContent = (data.knob_down || 1);
   if (data.switch === 'left') document.getElementById('switch_left').checked = true;
   else if (data.switch === 'right') document.getElementById('switch_right').checked = true;
   else document.getElementById('switch_center').checked = true;
-  document.getElementById('canvas_width').value = data.canvas_width || 500;
-  document.getElementById('canvas_height').value = data.canvas_height || 500;
+  // Show sizes in cm for the UI (stored internally in mm). Default to 50 cm if missing.
+  document.getElementById('canvas_width').value = (data.canvas_width ? Math.round(data.canvas_width / 10) : 50);
+  document.getElementById('canvas_height').value = (data.canvas_height ? Math.round(data.canvas_height / 10) : 50);
 
   // Normalize button fields into objects { state, color } so colors are never lost.
   let normalized = false;
@@ -167,12 +188,18 @@ if (knobInitEl) {
   // Build settings object from the form
   function buildSettingsFromForm() {
     const data = {};
-    data.knob_down = parseInt(document.getElementById('knob_down').value);
+    // Clamp knob to dynamic max according to current size (cm inputs * 10 -> mm)
+    const cmW = parseInt(document.getElementById('canvas_width').value) || 50;
+    const cmH = parseInt(document.getElementById('canvas_height').value) || 50;
+    const zMax = computeZoomMaxForDims(cmW * 10, cmH * 10);
+    const knobRaw = parseInt(document.getElementById('knob_down').value) || 1;
+    data.knob_down = Math.max(1, Math.min(zMax, knobRaw));
   data.slider = 50; // fixed per new requirement
     const sw = document.querySelector('input[name="switch"]:checked');
     data.switch = sw ? sw.value : 'center';
-    data.canvas_width = parseInt(document.getElementById('canvas_width').value);
-    data.canvas_height = parseInt(document.getElementById('canvas_height').value);
+  // Convert from cm (UI) to mm (stored/used)
+  data.canvas_width = parseInt(document.getElementById('canvas_width').value) * 10;
+  data.canvas_height = parseInt(document.getElementById('canvas_height').value) * 10;
     for (let i = 0; i <= 9; i++) {
       const btnKey = `button_${i}`;
   const swatch = document.getElementById(btnKey + '_swatch');
@@ -210,9 +237,9 @@ function attachAutoSave() {
   const form = document.getElementById('settingsForm');
   if (form) {
     form.querySelectorAll('input').forEach(input => {
-      // Only width/height remain in the form; still autosave/generate on change
-      input.oninput = autoSaveAndGenerate;
-      input.onchange = autoSaveAndGenerate;
+      // Only width/height remain in the form; defer autosave until overlay closes
+      input.oninput = () => { settingsDirty = true; };
+      input.onchange = () => { settingsDirty = true; };
     });
   }
   // Also attach listeners for inputs now on the main screen
@@ -229,6 +256,12 @@ function attachAutoSave() {
     knobEl.oninput = () => {
       const zv = document.getElementById('zoomValue');
       if (zv) zv.textContent = knobEl.value;
+      // keep the track fill in sync while sliding
+      const v = parseFloat(knobEl.value || '1');
+      const min = parseFloat(knobEl.min || '1');
+      const max = parseFloat(knobEl.max || '10');
+      const pct = Math.max(0, Math.min(100, ((v - min) / (max - min)) * 100));
+      knobEl.style.setProperty('--progress', pct + '%');
     };
     // Save on release
     knobEl.onchange = autoSaveAndGenerate;
@@ -719,11 +752,26 @@ document.getElementById('forwardBtn').onclick = function() {
 // Debounced auto-save and generate
 async function autoSaveAndGenerate() {
   const data = {};
-  data.knob_down = parseInt(document.getElementById('knob_down').value);
+  // Clamp knob to dynamic max according to current size (cm inputs * 10 -> mm)
+  (function(){
+    const cmW = parseInt(document.getElementById('canvas_width').value) || 50;
+    const cmH = parseInt(document.getElementById('canvas_height').value) || 50;
+    const zMax = computeZoomMaxForDims(cmW * 10, cmH * 10);
+    const knobRaw = parseInt(document.getElementById('knob_down').value) || 1;
+    const clamped = Math.max(1, Math.min(zMax, knobRaw));
+    // Reflect clamp to the UI control to avoid confusion
+    const knobEl2 = document.getElementById('knob_down');
+    if (knobEl2) {
+      knobEl2.max = String(zMax);
+      if (clamped !== knobRaw) knobEl2.value = String(clamped);
+    }
+    data.knob_down = clamped;
+  })();
   data.slider = 50; // fixed bias per requirement
   data.switch = document.querySelector('input[name="switch"]:checked').value;
-  data.canvas_width = parseInt(document.getElementById('canvas_width').value);
-  data.canvas_height = parseInt(document.getElementById('canvas_height').value);
+  // Convert from cm (UI) to mm (stored/used)
+  data.canvas_width = parseInt(document.getElementById('canvas_width').value) * 10;
+  data.canvas_height = parseInt(document.getElementById('canvas_height').value) * 10;
   for (let i = 0; i <= 9; i++) {
     const btnKey = `button_${i}`;
     const swatch = document.getElementById(btnKey + '_swatch');
@@ -749,23 +797,35 @@ const settingsOverlay = document.getElementById('settingsOverlay');
 const showSettingsTab = document.getElementById('showSettingsTab');
 const closeSettingsBtn = document.getElementById('closeSettingsBtn');
 const settingsPanel = document.getElementById('settingsPanel');
+let settingsDirty = false; // track if size inputs changed while settings open
+
+function closeSettingsAndApply() {
+  settingsOverlay.style.display = 'none';
+  showSettingsTab.style.display = 'flex';
+  document.body.classList.remove('settings-open');
+  // Apply changes only once when closing
+  if (settingsDirty) {
+    settingsDirty = false;
+    // Save and generate with the new size
+    autoSaveAndGenerate();
+  }
+}
 
 showSettingsTab.onclick = function() {
   settingsOverlay.style.display = 'flex';
   showSettingsTab.style.display = 'none';
   document.body.classList.add('settings-open');
+  settingsDirty = false; // reset dirty flag on open
 };
-closeSettingsBtn.onclick = function() {
-  settingsOverlay.style.display = 'none';
-  showSettingsTab.style.display = 'flex';
-  document.body.classList.remove('settings-open');
-};
+if (closeSettingsBtn) {
+  closeSettingsBtn.onclick = function() {
+    closeSettingsAndApply();
+  };
+}
 // Click outside panel closes overlay
 settingsOverlay.onclick = function(e) {
   if (e.target === settingsOverlay) {
-    settingsOverlay.style.display = 'none';
-    showSettingsTab.style.display = 'flex';
-    document.body.classList.remove('settings-open');
+    closeSettingsAndApply();
   }
 };
 
@@ -940,21 +1000,61 @@ function syncOverlayToCanvas() {
   const baseLeft = Math.round(canvasRect.left - areaRect.left);
   const baseTop = Math.round(canvasRect.top - areaRect.top);
   // Palette bar is now in-flow above the canvas; do not set absolute positioning here
-  // Shape bar centered at bottom edge of canvas
-  if (shapeBar) {
-    const pxLeft = baseLeft + Math.round(cssW / 2);
-    shapeBar.style.left = pxLeft + 'px';
-    // Do not set top here; rely on CSS bottom positioning for robustness
-    shapeBar.style.top = '';
-    shapeBar.style.transform = 'translateX(-50%)';
-    // Preserve CSS bottom/right from stylesheet
-  }
+  // Shape bar is now part of the controls; no absolute positioning here
   // Zoom bar pinned to top-right of canvas
   if (zoomBar) {
-    const pyTop = baseTop + 8; // keep top aligned with canvas
+    // Anchor to the top of the canvas (no extra offset) and match its visible height
+    const pyTop = baseTop;
     // Do not set left; keep CSS right anchoring
     zoomBar.style.left = '';
     zoomBar.style.top = pyTop + 'px';
+    // Match the zoom bar container height to the displayed canvas height (force override)
+    if (zoomBar.style && zoomBar.style.setProperty) {
+      zoomBar.style.setProperty('height', cssH + 'px', 'important');
+    } else {
+      zoomBar.style.height = cssH + 'px';
+    }
+    // Ensure the internal range travel matches the full height minus padding
+    const padTop = 6, padBottom = 6; // keep in sync with CSS padding on #zoomBar
+    const extraInset = 10; // additional top/bottom inset inside the content box
+    const innerTravel = Math.max(60, cssH - (padTop + padBottom) - (2 * extraInset));
+  const rangeEl = zoomBar.querySelector('input[type="range"]');
+    if (rangeEl) {
+      // Use native vertical slider: height controls the vertical travel; width is thickness
+      if (rangeEl.style && rangeEl.style.setProperty) {
+        rangeEl.style.setProperty('height', innerTravel + 'px', 'important');
+        rangeEl.style.setProperty('width', '28px', 'important');
+      } else {
+        rangeEl.style.height = innerTravel + 'px';
+        rangeEl.style.width = '28px';
+      }
+      // ensure Firefox uses vertical orientation hint
+      try { rangeEl.setAttribute('orient', 'vertical'); } catch(e) {}
+      rangeEl.min = '1';
+      // Determine max based on intrinsic canvas size; fallback to inputs if dataset missing
+      let iw = parseInt(canvas.dataset.intrinsicWidth || '0', 10);
+      let ih = parseInt(canvas.dataset.intrinsicHeight || '0', 10);
+      if (!(iw > 0 && ih > 0)) {
+        const formWcm = parseInt(document.getElementById('canvas_width')?.value || '50', 10);
+        const formHcm = parseInt(document.getElementById('canvas_height')?.value || '50', 10);
+        iw = formWcm * 10; ih = formHcm * 10;
+      }
+      const dynMax = computeZoomMaxForDims(iw, ih);
+      rangeEl.max = String(dynMax);
+      rangeEl.step = '1';
+      // Update CSS variable for progress fill (WebKit) based on current value
+      // Clamp current value to new max if needed
+      let vNum = parseInt(rangeEl.value || '1', 10);
+      if (vNum > dynMax) {
+        vNum = dynMax;
+        rangeEl.value = String(vNum);
+      }
+      const v = parseFloat(String(vNum));
+      const min = parseFloat(rangeEl.min || '1');
+      const max = parseFloat(rangeEl.max || '100');
+      const pct = Math.max(0, Math.min(100, ((v - min) / (max - min)) * 100));
+      rangeEl.style.setProperty('--progress', pct + '%');
+    }
     zoomBar.style.transform = ''; // no centering for corner pin
     // Preserve CSS right/bottom from stylesheet
   }
