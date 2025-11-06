@@ -412,9 +412,13 @@ h1 {
   }
   #paletteBarMobile { flex: 1 1 auto; white-space: normal; flex-wrap: wrap; gap: 8px; box-shadow: none; background: transparent; padding: 0; }
   #showSettingsTabMobile { flex: 0 0 auto; }
-  /* Add top padding so canvas doesn’t sit under the toolbar */
-  #patternArea { padding-top: 24px; }
+  /* Add minimal top padding by default; expand when toolbar is visible */
+  #patternArea { padding-top: 8px; }
   body.top-toolbar-visible #patternArea { padding-top: 84px; }
+
+  /* Maximize canvas area on mobile */
+  #mainCanvasContainer { padding: 0 4px; }
+  #patternArea { margin-bottom: 0; padding-bottom: 4px; }
 
   /* Hide desktop-only elements on mobile */
   #paletteBarDesktop, #showSettingsTab { display: none !important; }
@@ -487,6 +491,27 @@ h1 {
 
   /* When controls are visible, nudge the canvas content upward a bit */
   .controls-visible #patternArea { transform: translateY(-32px); transition: transform 180ms ease; }
+
+  /* Zoom: retractable to the right side */
+  #zoomHandle {
+    position: absolute;
+    right: 2px;
+    top: 8px; /* will be adjusted by JS to match canvas top */
+    width: 26px;
+    height: 42px;
+    border-radius: 12px;
+    background: rgba(0,0,0,0.08);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+    z-index: 251; /* above zoomBar container */
+    cursor: pointer;
+    opacity: 1;
+    transition: opacity 160ms ease, transform 160ms ease;
+  }
+  /* Hide zoom bar by default; show only when .zoom-visible is set on body */
+  #patternArea #zoomBar { transition: transform 180ms ease, opacity 160ms ease; }
+  body:not(.zoom-visible) #patternArea #zoomBar { transform: translateX(120%); opacity: 0; pointer-events: none; }
+  body.zoom-visible #patternArea #zoomBar { transform: translateX(0); opacity: 1; pointer-events: auto; }
+  body.zoom-visible #zoomHandle { opacity: 0; pointer-events: none; }
 }
 /* Input rows in the controls bar */
 .input-row { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }

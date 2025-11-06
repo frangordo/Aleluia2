@@ -102,6 +102,12 @@ function renderButtonInputs(data) {
         autoSaveAndRecolorImmediate();
     });
   }
+  // After palette renders, recompute canvas size to account for palette height (desktop)
+  try {
+    if (typeof recomputeCanvasSize === 'function') {
+      requestAnimationFrame(() => requestAnimationFrame(() => recomputeCanvasSize()));
+    }
+  } catch (e) { /* ignore */ }
 }
 
 // Fill form with data.json values. Normalize legacy button fields to {state,color} and persist back.
@@ -346,16 +352,27 @@ const maxViewportWidth = Math.max(1, areaRect.width - 16);  // small padding
 // subtract controls height so canvas doesn't sit beneath fixed controls
 const controlsEl = document.getElementById('controls');
 const controlsRect = controlsEl ? controlsEl.getBoundingClientRect() : { height: 0 };
-const reserved = Math.max(12, Math.round(controlsRect.height));
+// Only reserve controls height if they're actually visible (mobile keeps them hidden until needed)
+const controlsVisible = controlsEl && controlsEl.classList.contains('visible');
+const reserved = controlsVisible ? Math.max(12, Math.round(controlsRect.height)) : 8;
+// On desktop, also reserve the desktop palette's height so it doesn't get clipped
+let reservedTop = 0;
+const paletteDesktop = document.getElementById('paletteBarDesktop');
+if (paletteDesktop) {
+  const ph = paletteDesktop.getBoundingClientRect().height || 0;
+  if (ph > 0) reservedTop = Math.round(ph + 6); // small gap
+}
 const maxViewportHeight = Math.max(1, areaRect.height - reserved - 8);
-const scale = Math.min(maxViewportWidth / intrinsicW, maxViewportHeight / intrinsicH, 1);
+// Deduct top reservation (desktop palette) from height available to the canvas
+const availHeight = Math.max(1, maxViewportHeight - reservedTop);
+const scale = Math.min(maxViewportWidth / intrinsicW, availHeight / intrinsicH, 1);
 const cssW = Math.round(intrinsicW * scale);
 const cssH = Math.round(intrinsicH * scale);
 canvas.style.width = cssW + 'px';
 canvas.style.height = cssH + 'px';
 // ensure the canvas doesn't exceed the area (safety)
 canvas.style.maxWidth = Math.round(maxViewportWidth) + 'px';
-canvas.style.maxHeight = Math.round(maxViewportHeight) + 'px';
+canvas.style.maxHeight = Math.round(availHeight) + 'px';
   // store intrinsic size so resize handler can reapply scale
   canvas.dataset.intrinsicWidth = intrinsicW;
   canvas.dataset.intrinsicHeight = intrinsicH;
@@ -368,10 +385,19 @@ function computeBackingSize(intrinsicW, intrinsicH) {
   const areaRect = patternArea ? patternArea.getBoundingClientRect() : { width: window.innerWidth, height: window.innerHeight };
   const controlsEl = document.getElementById('controls');
   const controlsRect = controlsEl ? controlsEl.getBoundingClientRect() : { height: 0 };
-  const reserved = Math.max(12, Math.round(controlsRect.height));
+  const controlsVisible = controlsEl && controlsEl.classList.contains('visible');
+  const reserved = controlsVisible ? Math.max(12, Math.round(controlsRect.height)) : 8;
   const maxViewportWidth = Math.max(1, areaRect.width - 16);
+  // Also reserve desktop palette height if present/visible
+  let reservedTop = 0;
+  const paletteDesktop = document.getElementById('paletteBarDesktop');
+  if (paletteDesktop) {
+    const ph = paletteDesktop.getBoundingClientRect().height || 0;
+    if (ph > 0) reservedTop = Math.round(ph + 6);
+  }
   const maxViewportHeight = Math.max(1, areaRect.height - reserved - 8);
-  const cssScale = Math.min(maxViewportWidth / intrinsicW, maxViewportHeight / intrinsicH, 1);
+  const availHeight = Math.max(1, maxViewportHeight - reservedTop);
+  const cssScale = Math.min(maxViewportWidth / intrinsicW, availHeight / intrinsicH, 1);
   const dpr = window.devicePixelRatio || 1;
   // Backing buffer target in device pixels, limited by GPU constraints
   const targetW = Math.max(1, Math.floor(intrinsicW * cssScale * dpr));
@@ -1003,6 +1029,16 @@ if (window.ResizeObserver && controlsEl) {
   const cro = new ResizeObserver(recomputeCanvasSize);
   cro.observe(controlsEl);
 }
+// Observe desktop palette height changes to reflow canvas on first render and later wraps
+const paletteDesktopEl = document.getElementById('paletteBarDesktop');
+if (window.ResizeObserver && paletteDesktopEl) {
+  const pro = new ResizeObserver(recomputeCanvasSize);
+  pro.observe(paletteDesktopEl);
+}
+// Recompute after window load to catch late style/layout or font loading
+window.addEventListener('load', () => {
+  if (typeof recomputeCanvasSize === 'function') recomputeCanvasSize();
+});
 
 // Keep the overlay canvas aligned and scaled to the visible pattern canvas
 function syncOverlayToCanvas() {
@@ -1012,6 +1048,7 @@ function syncOverlayToCanvas() {
   const paletteBar = document.getElementById('paletteBar');
   const shapeBar = document.getElementById('shapeBar');
   const zoomBar = document.getElementById('zoomBar');
+  const zoomHandle = document.getElementById('zoomHandle');
   if (!area || !canvas || !overlay) return;
   const areaRect = area.getBoundingClientRect();
   const canvasRect = canvas.getBoundingClientRect();
@@ -1091,6 +1128,11 @@ function syncOverlayToCanvas() {
     }
     zoomBar.style.transform = ''; // no centering for corner pin
     // Preserve CSS right/bottom from stylesheet
+  }
+  // Position the zoom handle aligned with the canvas top on mobile
+  if (zoomHandle) {
+    const baseTop = Math.round(canvasRect.top - areaRect.top);
+    zoomHandle.style.top = (baseTop + 8) + 'px';
   }
 }
 
@@ -1198,6 +1240,35 @@ function syncOverlayToCanvas() {
   } else {
     showControls();
   }
+})();
+
+// Mobile retractable zoom: show on handle tap, hide on outside tap
+(function(){
+  const zoomBar = document.getElementById('zoomBar');
+  const zoomHandle = document.getElementById('zoomHandle');
+  function isMobile(){ return (window.innerWidth || document.documentElement.clientWidth || 0) <= 768; }
+  if (!zoomBar || !zoomHandle) return;
+  // Start hidden on mobile
+  if (isMobile()) { document.body.classList.remove('zoom-visible'); }
+  zoomHandle.addEventListener('click', ()=>{
+    if (!isMobile()) return;
+    document.body.classList.add('zoom-visible');
+  }, { passive: true });
+  document.addEventListener('click', (e)=>{
+    if (!isMobile()) return;
+    const t = e.target;
+    const inside = zoomBar.contains(t) || zoomHandle.contains(t);
+    if (!inside) { document.body.classList.remove('zoom-visible'); }
+  }, { capture: true, passive: true });
+  window.addEventListener('resize', ()=>{
+    if (!isMobile()) {
+      // Ensure zoom is visible by default on desktop
+      document.body.classList.add('zoom-visible');
+    } else {
+      // Hide by default on mobile until user taps handle
+      document.body.classList.remove('zoom-visible');
+    }
+  });
 })();
 
 // ---- Division-level edit interactions ----
