@@ -4,22 +4,134 @@
     "x1": 1,
     "y1": 1,
     "x2": 10,
-    "y2": 50,
-    "shape": "aleluia_quadrados",
-    "variant": 6,
-    "color_fundo": "#ffffff",
-    "color_padrao": "#ff7b24",
-    "recolor_count": 1,
+    "y2": 11,
+    "shape": "aleluia_triangulos",
+    "variant": 7,
+    "color_fundo": "#bd7ef1",
+    "color_padrao": "#ff66de",
+    "recolor_count": 30,
     "last_pairs": [
       [
-        "#007EA7",
-        "#7081ff"
+        "#f98686",
+        "#3517ab"
+      ],
+      [
+        "#f98686",
+        "#3517ab"
+      ],
+      [
+        "#3517ab",
+        "#fcff4d"
+      ]
+    ],
+    "seed": 1212480836
+  },
+  {
+    "id": 2,
+    "x1": 1,
+    "y1": 12,
+    "x2": 10,
+    "y2": 23,
+    "shape": "aleluia_quadrados",
+    "variant": 14,
+    "color_fundo": "#3517ab",
+    "color_padrao": "#f98686",
+    "recolor_count": 30,
+    "last_pairs": [
+      [
+        "#fcff4d",
+        "#ffffff"
+      ],
+      [
+        "#fcff4d",
+        "#ffffff"
+      ],
+      [
+        "#ff7b24",
+        "#ffffff"
+      ]
+    ],
+    "seed": 581251692
+  },
+  {
+    "id": 3,
+    "x1": 1,
+    "y1": 24,
+    "x2": 10,
+    "y2": 34,
+    "shape": "aleluia_quadrados",
+    "variant": 7,
+    "color_fundo": "#ff66de",
+    "color_padrao": "#3517ab",
+    "recolor_count": 30,
+    "last_pairs": [
+      [
+        "#ffffff",
+        "#ff66de"
       ],
       [
         "#ffffff",
+        "#ff66de"
+      ],
+      [
+        "#ff66de",
+        "#3517ab"
+      ]
+    ],
+    "seed": 1348313892
+  },
+  {
+    "id": 4,
+    "x1": 1,
+    "y1": 35,
+    "x2": 10,
+    "y2": 45,
+    "shape": "aleluia_quadrados",
+    "variant": 5,
+    "color_fundo": "#fcff4d",
+    "color_padrao": "#bd7ef1",
+    "recolor_count": 30,
+    "last_pairs": [
+      [
+        "#7081ff",
+        "#ff7b24"
+      ],
+      [
+        "#7081ff",
+        "#ff7b24"
+      ],
+      [
+        "#f98686",
+        "#ffffff"
+      ]
+    ],
+    "seed": 549651056
+  },
+  {
+    "id": 5,
+    "x1": 1,
+    "y1": 46,
+    "x2": 10,
+    "y2": 50,
+    "shape": "aleluia_quadrados",
+    "variant": 4,
+    "color_fundo": "#bd7ef1",
+    "color_padrao": "#ff7b24",
+    "recolor_count": 30,
+    "last_pairs": [
+      [
+        "#7081ff",
+        "#ffffff"
+      ],
+      [
+        "#7081ff",
+        "#ffffff"
+      ],
+      [
+        "#bd7ef1",
         "#ff7b24"
       ]
     ],
-    "seed": 1774621739
+    "seed": 1348320036
   }
 ]

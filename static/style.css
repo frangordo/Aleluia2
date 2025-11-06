@@ -113,9 +113,10 @@ h1 {
 /* small fallback padding in case JS doesn't run; actual reserved space is computed dynamically */
 #patternArea { padding-bottom: 12px; }
 
-/* Fixed palette bar inside the pattern area */
-#paletteBar {
-  position: relative; /* in-flow above canvas */
+/* Top toolbar (palette + Size tab) - hidden by default (desktop) */
+#topToolbar { display: none; }
+/* Mobile palette wrapper inside toolbar */
+#paletteBarMobile {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -123,11 +124,26 @@ h1 {
   border-radius: 10px;
   background: rgba(255,255,255,0.92);
   box-shadow: 0 6px 16px rgba(0,0,0,0.18);
-  z-index: 250; /* sits above background but not over controls */
+  z-index: 250;
+  max-width: 100%;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+/* Desktop palette in-flow above canvas */
+#paletteBarDesktop {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.92);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.18);
+  z-index: 250;
   max-width: calc(100% - 16px);
   overflow-x: auto;
   white-space: nowrap;
-  margin-bottom: 8px; /* space from canvas */
+  margin-bottom: 8px;
 }
 
 /* Shape bar in controls: inline with buttons, no container box */
@@ -264,9 +280,23 @@ h1 {
   font-size: 1.1em;
   font-weight: bold;
   cursor: pointer;
-  z-index: 2000; /* ensure above floating bars */
+  z-index: 2000;
   box-shadow: -2px 2px 10px #0006;
   transition: background 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+/* Mobile Size tab inside toolbar */
+#showSettingsTabMobile {
+  position: relative;
+  background: #4caf50;
+  color: #fff;
+  border-radius: 10px;
+  padding: 10px 18px;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: -2px 2px 10px #0006;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -340,6 +370,8 @@ h1 {
   vertical-align: middle;
 }
 @media (max-width: 600px) {
+  /* Hide logo on small mobile to reclaim vertical space */
+  #logo { display: none !important; }
   #settingsPanel {
     max-width: 98vw;
     padding: 22px 3vw 16px 3vw;
@@ -358,16 +390,65 @@ h1 {
 
 /* Broader mobile/tablet adjustments */
 @media (max-width: 768px) {
+  /* Hide logo to bring content up */
+  #logo { display: none !important; }
+  /* Make toolbar fixed at the top on mobile */
+  #topToolbar {
+    display: flex;
+    position: fixed;
+    top: 8px;
+    left: 8px;
+    right: 8px;
+    z-index: 2100;
+    background: rgba(255,255,255,0.95);
+    backdrop-filter: blur(3px);
+    border-radius: 12px;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.12);
+    padding: 8px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    transition: transform 180ms ease, opacity 160ms ease;
+  }
+  #paletteBarMobile { flex: 1 1 auto; white-space: normal; flex-wrap: wrap; gap: 8px; box-shadow: none; background: transparent; padding: 0; }
+  #showSettingsTabMobile { flex: 0 0 auto; }
+  /* Add top padding so canvas doesn’t sit under the toolbar */
+  #patternArea { padding-top: 24px; }
+  body.top-toolbar-visible #patternArea { padding-top: 84px; }
+
+  /* Hide desktop-only elements on mobile */
+  #paletteBarDesktop, #showSettingsTab { display: none !important; }
+  /* Top toolbar handle */
+  #topToolbarHandle {
+    position: fixed;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 72px;
+    height: 18px;
+    border-radius: 12px;
+    background: rgba(0,0,0,0.08);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+    z-index: 2099;
+    cursor: pointer;
+    opacity: 1;
+    transition: opacity 160ms ease;
+  }
+  /* Hidden state for toolbar; handle visible */
+  body:not(.top-toolbar-visible) #topToolbar { transform: translateY(-130%); opacity: 0; pointer-events: none; }
+  body.top-toolbar-visible #topToolbar { transform: translateY(0); opacity: 1; pointer-events: auto; }
+  body.top-toolbar-visible #topToolbarHandle { opacity: 0; pointer-events: none; }
+
   /* Make color swatches larger and allow wrapping into multiple rows */
   #paletteBar { white-space: normal; justify-content: center; gap: 10px; }
   #buttonInputs { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
-  .swatch { width: 46px; height: 46px; border-width: 3px; }
+  .swatch { width: 40px; height: 40px; border-width: 2px; }
   #buttonInputs > div { margin: 0; }
 
   /* Enlarge controls buttons slightly and tighten spacing */
   #controls .btn-row { gap: 6px; }
   .btn-row-grid { gap: 8px; }
-  #controls button, .switch-option { padding: 12px 18px; min-height: 44px; font-size: 1.08em; }
+  #controls button, .switch-option { padding: 10px 16px; min-height: 40px; font-size: 1.02em; }
 
   /* Bigger settings UI for readability */
   #settingsOverlay { align-items: center; justify-content: center; }
@@ -400,8 +481,12 @@ h1 {
   #showSettingsTab { font-size: 1.25em; padding: 16px 28px 16px 14px; border-radius: 10px 0 0 10px; }
 
   /* Zoom thumb larger for easier control */
-  #zoomBar input[type="range"]::-webkit-slider-thumb { width: 32px; height: 32px; }
-  #zoomBar input[type="range"]::-moz-range-thumb { width: 32px; height: 32px; }
+  #zoomBar { width: 28px; }
+  #zoomBar input[type="range"]::-webkit-slider-thumb { width: 24px; height: 24px; }
+  #zoomBar input[type="range"]::-moz-range-thumb { width: 24px; height: 24px; }
+
+  /* When controls are visible, nudge the canvas content upward a bit */
+  .controls-visible #patternArea { transform: translateY(-32px); transition: transform 180ms ease; }
 }
 /* Input rows in the controls bar */
 .input-row { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }

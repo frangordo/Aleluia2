@@ -46,9 +46,15 @@ async function postJSON(url, data) {
 
 // Dynamically create button color/off inputs
 // `data` may be legacy format (string) or normalized objects { state: "on"|"off", color: "#hex" }.
+function isNarrowViewport(){ return (window.innerWidth || document.documentElement.clientWidth || 0) <= 768; }
+
 function renderButtonInputs(data) {
-  const container = document.getElementById('buttonInputs');
-  container.innerHTML = '';
+  const mobileC = document.getElementById('buttonInputsMobile');
+  const deskC = document.getElementById('buttonInputsDesktop');
+  if (mobileC) mobileC.innerHTML = '';
+  if (deskC) deskC.innerHTML = '';
+  const container = (isNarrowViewport() && mobileC) ? mobileC : (deskC || mobileC);
+  if (!container) return;
   for (let i = 0; i <= 9; i++) {
     const btnKey = `button_${i}`;
     // Normalize incoming value into object with { state, color }
@@ -794,7 +800,7 @@ async function autoSaveAndGenerate() {
 
 // Overlay logic
 const settingsOverlay = document.getElementById('settingsOverlay');
-const showSettingsTab = document.getElementById('showSettingsTab');
+const showSettingsTabs = Array.from(document.querySelectorAll('#showSettingsTab, #showSettingsTabMobile'));
 const closeSettingsBtn = document.getElementById('closeSettingsBtn');
 const settingsPanel = document.getElementById('settingsPanel');
 let settingsDirty = false; // track if size inputs changed while settings open
@@ -811,12 +817,14 @@ function closeSettingsAndApply() {
   }
 }
 
-showSettingsTab.onclick = function() {
-  settingsOverlay.style.display = 'flex';
-  showSettingsTab.style.display = 'none';
-  document.body.classList.add('settings-open');
-  settingsDirty = false; // reset dirty flag on open
-};
+showSettingsTabs.forEach(tab => {
+  if (!tab) return;
+  tab.onclick = function(){
+    settingsOverlay.style.display = 'flex';
+    document.body.classList.add('settings-open');
+    settingsDirty = false;
+  };
+});
 if (closeSettingsBtn) {
   closeSettingsBtn.onclick = function() {
     closeSettingsAndApply();
@@ -828,6 +836,32 @@ settingsOverlay.onclick = function(e) {
     closeSettingsAndApply();
   }
 };
+
+// Re-render palette in correct container on orientation/width change
+window.addEventListener('resize', async () => {
+  try {
+    const raw = await loadJSON('data.json');
+    await renderButtonInputs(raw || {});
+  } catch (e) { /* ignore */ }
+});
+
+// Mobile top toolbar show/hide logic
+(function(){
+  const toolbar = document.getElementById('topToolbar');
+  const handle = document.getElementById('topToolbarHandle');
+  if (!toolbar || !handle) return;
+  function isMobile(){ return isNarrowViewport(); }
+  function show(){ document.body.classList.add('top-toolbar-visible'); }
+  function hide(){ document.body.classList.remove('top-toolbar-visible'); }
+  handle.addEventListener('click', () => { show(); }, { passive: true });
+  document.addEventListener('click', (e)=>{
+    if (!isMobile()) return;
+    const t = e.target;
+    const inside = toolbar.contains(t) || handle.contains(t);
+    if (!inside){ hide(); }
+  }, { capture: true, passive: true });
+  window.addEventListener('resize', ()=>{ if (!isMobile()) { document.body.classList.remove('top-toolbar-visible'); } });
+})();
 
 // Initial load
 // Ensure session cookie mirrors localStorage on every load before requests start
@@ -1096,7 +1130,8 @@ function syncOverlayToCanvas() {
 
   function resetIdle() {
     if (idleTimer) clearTimeout(idleTimer);
-    if (isSmallViewport()) {
+    // On mobile, we only show on handle click; don't auto-hide by timer.
+    if (!isSmallViewport()) {
       idleTimer = setTimeout(hideControls, IDLE_MS);
     }
   }
@@ -1104,8 +1139,11 @@ function syncOverlayToCanvas() {
   // Show on pointer/move/touch
   ['mousemove','pointermove','touchstart','touchmove'].forEach(evt => {
     window.addEventListener(evt, () => {
-      showControls();
-      resetIdle();
+      // Only auto-show on larger screens; on mobile, require handle click
+      if (!isSmallViewport()) {
+        showControls();
+        resetIdle();
+      }
     }, { passive: true });
   });
 
@@ -1119,6 +1157,17 @@ function syncOverlayToCanvas() {
     }
   });
 
+  // Hide controls when clicking/tapping outside them on mobile
+  document.addEventListener('click', (e) => {
+    if (!isSmallViewport()) return; // only on mobile
+    const target = e.target;
+    const clickedInsideControls = controls.contains(target) || handle.contains(target);
+    if (!clickedInsideControls && controls.classList.contains('visible')) {
+      isManualOpen = false;
+      hideControls();
+    }
+  }, { capture: true, passive: true });
+
   // Recompute behaviour on resize
   window.addEventListener('resize', () => {
     if (!isSmallViewport()) {
@@ -1127,16 +1176,25 @@ function syncOverlayToCanvas() {
       controls.classList.add('visible');
       handle.style.opacity = '0';
     } else {
-      // start hidden on small screens
-      hideControls();
-      resetIdle();
+      // On mobile: keep controls hidden until handle tapped
+      isManualOpen = false;
+      controls.classList.add('hidden');
+      controls.classList.remove('visible');
+      handle.style.opacity = '1';
+      handle.style.pointerEvents = 'auto';
+      document.body.classList.remove('controls-visible');
     }
   });
 
   // initialize
   if (isSmallViewport()) {
-    hideControls();
-    resetIdle();
+    // Mobile: start hidden; show only when handle is tapped
+    isManualOpen = false;
+    controls.classList.add('hidden');
+    controls.classList.remove('visible');
+    handle.style.opacity = '1';
+    handle.style.pointerEvents = 'auto';
+    document.body.classList.remove('controls-visible');
   } else {
     showControls();
   }

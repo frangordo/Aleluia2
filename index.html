@@ -14,12 +14,23 @@
   <!-- Replaced textual title with logo image from static/Nome.png -->
   <!-- Logo image served from ./static/Nome.png -> available at /static/Nome.png -->
   <img id="logo" src="/static/Nome.png" alt="PEPESMACHINE" style="max-width:60vw; height:auto; display:block; margin:18px auto;">
+  <!-- Top toolbar (mobile only): palette on the left, Size tab on the right -->
+  <div id="topToolbar" role="toolbar" aria-label="Top controls">
+    <div id="paletteBarMobile" role="group" aria-label="Color palette">
+      <span id="buttonInputsMobile"></span>
+    </div>
+    <div id="showSettingsTabMobile">
+      <span style="font-size:1.3em;"></span> Size
+    </div>
+  </div>
+  <!-- Small handle to reveal top toolbar on mobile -->
+  <div id="topToolbarHandle" title="Show tools" aria-hidden="true"></div>
   <!-- Zoom slider (replaces the image-based potentiometer) -->
   <!-- Moved into the controls bar below; this block is intentionally removed here. -->
     <div id="patternArea">
-      <!-- Palette bar placed above the canvas (not overlaying the drawing) -->
-      <div id="paletteBar" role="group" aria-label="Color palette">
-        <span id="buttonInputs"></span>
+      <!-- Desktop palette bar above canvas -->
+      <div id="paletteBarDesktop" role="group" aria-label="Color palette">
+        <span id="buttonInputsDesktop"></span>
       </div>
       <canvas id="patternCanvas"></canvas>
       <!-- Overlay canvas for selection visualization -->
@@ -63,8 +74,9 @@
     <!-- Small handle to reveal hidden controls on mobile -->
     <div id="controlsHandle" title="Show controls" aria-hidden="true"></div>
   </div>
+  <!-- Desktop Size tab (separate button) -->
   <div id="showSettingsTab">
-    <span style="font-size:1.3em;">&#9654;</span> Size
+    <span style="font-size:1.3em;"></span> Size
   </div>
   <div id="settingsOverlay">
     <div id="settingsPanel">
