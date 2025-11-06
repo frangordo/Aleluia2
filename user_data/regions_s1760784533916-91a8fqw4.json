@@ -1,1 +1,25 @@
-[{"id":1,"x1":1,"y1":1,"x2":5,"y2":10,"shape":"aleluia_triangulos","variant":3,"color_fundo":"#fcff4d","color_padrao":"#f98686"}]
+[
+  {
+    "id": 1,
+    "x1": 1,
+    "y1": 1,
+    "x2": 10,
+    "y2": 50,
+    "shape": "aleluia_quadrados",
+    "variant": 6,
+    "color_fundo": "#ffffff",
+    "color_padrao": "#ff7b24",
+    "recolor_count": 1,
+    "last_pairs": [
+      [
+        "#007EA7",
+        "#7081ff"
+      ],
+      [
+        "#ffffff",
+        "#ff7b24"
+      ]
+    ],
+    "seed": 1774621739
+  }
+]
