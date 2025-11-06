@@ -1,0 +1,164 @@
+[
+  {
+    "id": 1,
+    "x1": 1,
+    "y1": 1,
+    "x2": 2,
+    "y2": 3,
+    "shape": "aleluia_triangulos",
+    "variant": 1,
+    "color_fundo": "#007EA7",
+    "color_padrao": "#f98686",
+    "seed": 1488400136,
+    "recolor_count": 12,
+    "last_pairs": [
+      [
+        "#7081ff",
+        "#ff66de"
+      ],
+      [
+        "#7081ff",
+        "#ff66de"
+      ],
+      [
+        "#007EA7",
+        "#f98686"
+      ]
+    ]
+  },
+  {
+    "id": 2,
+    "x1": 1,
+    "y1": 4,
+    "x2": 2,
+    "y2": 5,
+    "shape": "aleluia_quadrados",
+    "variant": 12,
+    "color_fundo": "#007EA7",
+    "color_padrao": "#bd7ef1",
+    "seed": 1943277192,
+    "recolor_count": 11,
+    "last_pairs": [
+      [
+        "#f98686",
+        "#007EA7"
+      ],
+      [
+        "#f98686",
+        "#007EA7"
+      ],
+      [
+        "#007EA7",
+        "#bd7ef1"
+      ]
+    ]
+  },
+  {
+    "id": 3,
+    "x1": 3,
+    "y1": 1,
+    "x2": 4,
+    "y2": 3,
+    "shape": "aleluia_quadrados",
+    "variant": 4,
+    "color_fundo": "#bd7ef1",
+    "color_padrao": "#7081ff",
+    "seed": 433419984,
+    "recolor_count": 15,
+    "last_pairs": [
+      [
+        "#ff7b24",
+        "#bd7ef1"
+      ],
+      [
+        "#ff7b24",
+        "#bd7ef1"
+      ],
+      [
+        "#bd7ef1",
+        "#7081ff"
+      ]
+    ]
+  },
+  {
+    "id": 4,
+    "x1": 3,
+    "y1": 4,
+    "x2": 4,
+    "y2": 5,
+    "shape": "aleluia_quadrados",
+    "variant": 2,
+    "color_fundo": "#fcff4d",
+    "color_padrao": "#f98686",
+    "seed": 1878744008,
+    "recolor_count": 12,
+    "last_pairs": [
+      [
+        "#007EA7",
+        "#ff7b24"
+      ],
+      [
+        "#007EA7",
+        "#ff7b24"
+      ],
+      [
+        "#fcff4d",
+        "#f98686"
+      ]
+    ]
+  },
+  {
+    "id": 5,
+    "x1": 5,
+    "y1": 1,
+    "x2": 5,
+    "y2": 3,
+    "shape": "aleluia_quadrados",
+    "variant": 13,
+    "color_fundo": "#ff66de",
+    "color_padrao": "#bd7ef1",
+    "seed": 994828664,
+    "recolor_count": 11,
+    "last_pairs": [
+      [
+        "#ff7b24",
+        "#bd7ef1"
+      ],
+      [
+        "#ff7b24",
+        "#bd7ef1"
+      ],
+      [
+        "#ff66de",
+        "#bd7ef1"
+      ]
+    ]
+  },
+  {
+    "id": 6,
+    "x1": 5,
+    "y1": 4,
+    "x2": 5,
+    "y2": 5,
+    "shape": "aleluia_triangulos",
+    "variant": 5,
+    "color_fundo": "#62fe74",
+    "color_padrao": "#7081ff",
+    "seed": 1335920168,
+    "recolor_count": 11,
+    "last_pairs": [
+      [
+        "#ff7b24",
+        "#f98686"
+      ],
+      [
+        "#ff7b24",
+        "#f98686"
+      ],
+      [
+        "#62fe74",
+        "#7081ff"
+      ]
+    ]
+  }
+]

@@ -1,8 +1,13 @@
 // Default button colors (will be used as fallback and initial palette)
 const DEFAULT_BUTTON_COLORS = [
-  "#ff66de","#f98686","#7081ff","#62fe74","#fcff4d",
-  "#ff7b24","#bd7ef1","#ffffff","#007EA7","#3517ab"
+  "#C64638", "#FF902E", "#FFD816", "#4F7A09", "#318B5B",
+  "#51AFCB", "#393D90", "#6F4B99", "#CF71A9"
 ];
+// Safety: ensure we always have 10 defaults for buttons 0..9
+if (DEFAULT_BUTTON_COLORS.length < 10) {
+  const pad = DEFAULT_BUTTON_COLORS[DEFAULT_BUTTON_COLORS.length - 1] || '#000000';
+  while (DEFAULT_BUTTON_COLORS.length < 10) DEFAULT_BUTTON_COLORS.push(pad);
+}
 
 // Persist session id via localStorage (survives browser restarts).
 // We still set a cookie from localStorage so fetch requests include it.
@@ -47,6 +52,8 @@ async function postJSON(url, data) {
 // Dynamically create button color/off inputs
 // `data` may be legacy format (string) or normalized objects { state: "on"|"off", color: "#hex" }.
 function isNarrowViewport(){ return (window.innerWidth || document.documentElement.clientWidth || 0) <= 768; }
+// Show only nine swatches in the UI
+const VISIBLE_PALETTE_COUNT = Math.min(9, DEFAULT_BUTTON_COLORS.length);
 
 function renderButtonInputs(data) {
   const mobileC = document.getElementById('buttonInputsMobile');
@@ -55,7 +62,7 @@ function renderButtonInputs(data) {
   if (deskC) deskC.innerHTML = '';
   const container = (isNarrowViewport() && mobileC) ? mobileC : (deskC || mobileC);
   if (!container) return;
-  for (let i = 0; i <= 9; i++) {
+  for (let i = 0; i < VISIBLE_PALETTE_COUNT; i++) {
     const btnKey = `button_${i}`;
     // Normalize incoming value into object with { state, color }
     let value = data[btnKey];
@@ -84,7 +91,7 @@ function renderButtonInputs(data) {
   }
 
   // Add event listeners: left-click -> toggle active/inactive
-  for (let i = 0; i <= 9; i++) {
+  for (let i = 0; i < VISIBLE_PALETTE_COUNT; i++) {
     const btnKey = `button_${i}`;
     const swatch = document.getElementById(btnKey + '_swatch');
     if (!swatch) continue;
@@ -212,12 +219,19 @@ if (knobInitEl) {
   // Convert from cm (UI) to mm (stored/used)
   data.canvas_width = parseInt(document.getElementById('canvas_width').value) * 10;
   data.canvas_height = parseInt(document.getElementById('canvas_height').value) * 10;
-    for (let i = 0; i <= 9; i++) {
+    // Persist nine visible buttons from DOM
+    for (let i = 0; i < VISIBLE_PALETTE_COUNT; i++) {
       const btnKey = `button_${i}`;
-  const swatch = document.getElementById(btnKey + '_swatch');
-      const color = (swatch && swatch.dataset && swatch.dataset.color) ? swatch.dataset.color : DEFAULT_BUTTON_COLORS[i];
+      const swatch = document.getElementById(btnKey + '_swatch');
+      const color = (swatch && swatch.dataset && swatch.dataset.color) ? swatch.dataset.color : (DEFAULT_BUTTON_COLORS[i] || DEFAULT_BUTTON_COLORS[DEFAULT_BUTTON_COLORS.length-1]);
       const state = (swatch && !swatch.classList.contains('inactive')) ? "on" : "off";
       data[btnKey] = { state: state, color: color };
+    }
+    // For hidden buttons (index >= 9), keep them present but off to avoid server-side surprises
+    for (let i = VISIBLE_PALETTE_COUNT; i <= 9; i++) {
+      const btnKey = `button_${i}`;
+      const def = DEFAULT_BUTTON_COLORS[i] || DEFAULT_BUTTON_COLORS[DEFAULT_BUTTON_COLORS.length-1];
+      data[btnKey] = { state: 'off', color: def };
     }
     return data;
   }
@@ -804,12 +818,19 @@ async function autoSaveAndGenerate() {
   // Convert from cm (UI) to mm (stored/used)
   data.canvas_width = parseInt(document.getElementById('canvas_width').value) * 10;
   data.canvas_height = parseInt(document.getElementById('canvas_height').value) * 10;
-  for (let i = 0; i <= 9; i++) {
+  // Persist nine visible buttons from DOM
+  for (let i = 0; i < VISIBLE_PALETTE_COUNT; i++) {
     const btnKey = `button_${i}`;
     const swatch = document.getElementById(btnKey + '_swatch');
-    const color = (swatch && swatch.dataset && swatch.dataset.color) ? swatch.dataset.color : DEFAULT_BUTTON_COLORS[i];
+    const color = (swatch && swatch.dataset && swatch.dataset.color) ? swatch.dataset.color : (DEFAULT_BUTTON_COLORS[i] || DEFAULT_BUTTON_COLORS[DEFAULT_BUTTON_COLORS.length-1]);
     const state = (swatch && !swatch.classList.contains('inactive')) ? "on" : "off";
     data[btnKey] = { state: state, color: color };
+  }
+  // Hidden buttons (>=9): present but off
+  for (let i = VISIBLE_PALETTE_COUNT; i <= 9; i++) {
+    const btnKey = `button_${i}`;
+    const def = DEFAULT_BUTTON_COLORS[i] || DEFAULT_BUTTON_COLORS[DEFAULT_BUTTON_COLORS.length-1];
+    data[btnKey] = { state: 'off', color: def };
   }
   await postJSON('/data.json', data);
 
@@ -955,11 +976,46 @@ async function firstRunBootstrap() {
   }
 }
 
+// If defaults changed, update data.json button colors to match (preserve on/off state)
+async function maybeApplyNewDefaultPalette() {
+  try {
+    const sig = JSON.stringify(DEFAULT_BUTTON_COLORS);
+    const prev = localStorage.getItem('paletteDefaultsSig') || '';
+    if (prev === sig) return; // already applied for this palette
+    // Load current settings
+    let data = {};
+    try { data = await loadJSON('data.json'); } catch (e) { data = {}; }
+    let changed = false;
+    for (let i = 0; i < 10; i++) {
+      const key = `button_${i}`;
+      const def = DEFAULT_BUTTON_COLORS[i] || DEFAULT_BUTTON_COLORS[DEFAULT_BUTTON_COLORS.length - 1] || '#FFFFFF';
+      const cur = data[key];
+      if (!cur || typeof cur !== 'object') {
+        data[key] = { state: 'on', color: def };
+        changed = true;
+      } else if (cur.color !== def) {
+        data[key] = { state: (cur.state === 'off' ? 'off' : 'on'), color: def };
+        changed = true;
+      }
+    }
+    if (changed) {
+      await postJSON('/data.json', data);
+      // Re-render palette so swatches show new colors immediately
+      renderButtonInputs(data);
+      showToast('Palette updated to new default colors.', 'success');
+    }
+    try { localStorage.setItem('paletteDefaultsSig', sig); } catch (e) { /* ignore */ }
+  } catch (e) {
+    console.warn('maybeApplyNewDefaultPalette failed', e);
+  }
+}
+
 // Ensure session cookie mirrors localStorage on every load before requests start
 ensureSessionId();
 (async function initialLoad(){
   await fillForm();
   attachAutoSave();
+  await maybeApplyNewDefaultPalette();
   loadHistory();
   updateGenIndicator();
   if (patternHistory.length > 0) {
