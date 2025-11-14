@@ -3,70 +3,405 @@
     "id": 1,
     "x1": 1,
     "y1": 1,
-    "x2": 24,
-    "y2": 23,
-    "shape": "aleluia_triangulos",
-    "variant": 2,
-    "color_fundo": "#CF71A9",
-    "color_padrao": "#FFD816",
-    "seed": 496712744
+    "x2": 11,
+    "y2": 11,
+    "shape": "aleluia_quadrados",
+    "variant": 7,
+    "color_fundo": "#318B5B",
+    "color_padrao": "#CF71A9",
+    "seed": 1340511592,
+    "recolor_count": 4,
+    "last_pairs": [
+      [
+        "#FF902E",
+        "#C64638"
+      ],
+      [
+        "#FF902E",
+        "#C64638"
+      ],
+      [
+        "#318B5B",
+        "#CF71A9"
+      ]
+    ]
   },
   {
     "id": 2,
     "x1": 1,
-    "y1": 24,
-    "x2": 24,
-    "y2": 30,
-    "shape": "aleluia_triangulos",
+    "y1": 12,
+    "x2": 11,
+    "y2": 23,
+    "shape": "aleluia_quadrados",
     "variant": 4,
-    "color_fundo": "#FF902E",
-    "color_padrao": "#6F4B99",
-    "seed": 1600109512
+    "color_fundo": "#CF71A9",
+    "color_padrao": "#318B5B",
+    "seed": 622990248,
+    "recolor_count": 4,
+    "last_pairs": [
+      [
+        "#FFD816",
+        "#393D90"
+      ],
+      [
+        "#FFD816",
+        "#393D90"
+      ],
+      [
+        "#CF71A9",
+        "#318B5B"
+      ]
+    ]
   },
   {
     "id": 3,
-    "x1": 25,
-    "y1": 1,
-    "x2": 47,
-    "y2": 23,
-    "shape": "aleluia_triangulos",
-    "variant": 1,
-    "color_fundo": "#FF902E",
-    "color_padrao": "#C64638",
-    "seed": 1153374956
-  },
-  {
-    "id": 4,
-    "x1": 25,
+    "x1": 1,
     "y1": 24,
-    "x2": 47,
-    "y2": 30,
-    "shape": "aleluia_triangulos",
-    "variant": 1,
-    "color_fundo": "#FFD816",
-    "color_padrao": "#FF902E",
-    "seed": 871859324
-  },
-  {
-    "id": 5,
-    "x1": 48,
-    "y1": 1,
-    "x2": 50,
-    "y2": 23,
-    "shape": "aleluia_triangulos",
-    "variant": 7,
-    "color_fundo": "#FFD816",
-    "color_padrao": "#C64638"
-  },
-  {
-    "id": 6,
-    "x1": 48,
-    "y1": 24,
-    "x2": 50,
+    "x2": 11,
     "y2": 30,
     "shape": "aleluia_triangulos",
     "variant": 5,
+    "color_fundo": "#FF902E",
+    "color_padrao": "#6F4B99",
+    "seed": 282607604,
+    "recolor_count": 4,
+    "last_pairs": [
+      [
+        "#FF902E",
+        "#C64638"
+      ],
+      [
+        "#FF902E",
+        "#C64638"
+      ],
+      [
+        "#FF902E",
+        "#6F4B99"
+      ]
+    ]
+  },
+  {
+    "id": 4,
+    "x1": 12,
+    "y1": 1,
+    "x2": 22,
+    "y2": 11,
+    "shape": "aleluia_triangulos",
+    "variant": 7,
+    "color_fundo": "#FF902E",
+    "color_padrao": "#393D90",
+    "seed": 147531512,
+    "recolor_count": 4,
+    "last_pairs": [
+      [
+        "#51AFCB",
+        "#FF902E"
+      ],
+      [
+        "#51AFCB",
+        "#FF902E"
+      ],
+      [
+        "#FF902E",
+        "#393D90"
+      ]
+    ]
+  },
+  {
+    "id": 5,
+    "x1": 12,
+    "y1": 12,
+    "x2": 22,
+    "y2": 23,
+    "shape": "aleluia_triangulos",
+    "variant": 5,
+    "color_fundo": "#318B5B",
+    "color_padrao": "#C64638",
+    "seed": 858910516,
+    "recolor_count": 4,
+    "last_pairs": [
+      [
+        "#FFD816",
+        "#318B5B"
+      ],
+      [
+        "#FFD816",
+        "#318B5B"
+      ],
+      [
+        "#318B5B",
+        "#C64638"
+      ]
+    ]
+  },
+  {
+    "id": 6,
+    "x1": 12,
+    "y1": 24,
+    "x2": 22,
+    "y2": 30,
+    "shape": "aleluia_quadrados",
+    "variant": 8,
+    "color_fundo": "#393D90",
+    "color_padrao": "#CF71A9",
+    "seed": 2114441248,
+    "recolor_count": 4,
+    "last_pairs": [
+      [
+        "#CF71A9",
+        "#51AFCB"
+      ],
+      [
+        "#CF71A9",
+        "#51AFCB"
+      ],
+      [
+        "#393D90",
+        "#CF71A9"
+      ]
+    ]
+  },
+  {
+    "id": 7,
+    "x1": 23,
+    "y1": 1,
+    "x2": 34,
+    "y2": 11,
+    "shape": "aleluia_triangulos",
+    "variant": 2,
+    "color_fundo": "#FFD816",
+    "color_padrao": "#CF71A9",
+    "seed": 1962184004,
+    "recolor_count": 4,
+    "last_pairs": [
+      [
+        "#FFD816",
+        "#51AFCB"
+      ],
+      [
+        "#FFD816",
+        "#51AFCB"
+      ],
+      [
+        "#FFD816",
+        "#CF71A9"
+      ]
+    ]
+  },
+  {
+    "id": 8,
+    "x1": 23,
+    "y1": 12,
+    "x2": 34,
+    "y2": 22,
+    "shape": "aleluia_quadrados",
+    "variant": 4,
+    "color_fundo": "#318B5B",
+    "color_padrao": "#FFD816",
+    "seed": 2144543184,
+    "recolor_count": 4,
+    "last_pairs": [
+      [
+        "#CF71A9",
+        "#51AFCB"
+      ],
+      [
+        "#CF71A9",
+        "#51AFCB"
+      ],
+      [
+        "#318B5B",
+        "#FFD816"
+      ]
+    ]
+  },
+  {
+    "id": 9,
+    "x1": 23,
+    "y1": 23,
+    "x2": 34,
+    "y2": 30,
+    "shape": "aleluia_quadrados",
+    "variant": 12,
+    "color_fundo": "#51AFCB",
+    "color_padrao": "#393D90",
+    "seed": 1746816288,
+    "recolor_count": 8,
+    "last_pairs": [
+      [
+        "#FFD816",
+        "#51AFCB"
+      ],
+      [
+        "#FFD816",
+        "#51AFCB"
+      ],
+      [
+        "#51AFCB",
+        "#393D90"
+      ]
+    ]
+  },
+  {
+    "id": 10,
+    "x1": 35,
+    "y1": 1,
+    "x2": 45,
+    "y2": 11,
+    "shape": "aleluia_triangulos",
+    "variant": 7,
+    "color_fundo": "#51AFCB",
+    "color_padrao": "#C64638",
+    "recolor_count": 6,
+    "last_pairs": [
+      [
+        "#318B5B",
+        "#FF902E"
+      ],
+      [
+        "#318B5B",
+        "#FF902E"
+      ],
+      [
+        "#51AFCB",
+        "#C64638"
+      ]
+    ],
+    "seed": 1330639272
+  },
+  {
+    "id": 11,
+    "x1": 35,
+    "y1": 12,
+    "x2": 45,
+    "y2": 23,
+    "shape": "aleluia_quadrados",
+    "variant": 9,
     "color_fundo": "#6F4B99",
-    "color_padrao": "#CF71A9"
+    "color_padrao": "#FFD816",
+    "seed": 1767688212,
+    "recolor_count": 6,
+    "last_pairs": [
+      [
+        "#CF71A9",
+        "#393D90"
+      ],
+      [
+        "#CF71A9",
+        "#393D90"
+      ],
+      [
+        "#6F4B99",
+        "#FFD816"
+      ]
+    ]
+  },
+  {
+    "id": 12,
+    "x1": 35,
+    "y1": 24,
+    "x2": 45,
+    "y2": 30,
+    "shape": "aleluia_quadrados",
+    "variant": 14,
+    "color_fundo": "#CF71A9",
+    "color_padrao": "#51AFCB",
+    "seed": 617265404,
+    "recolor_count": 4,
+    "last_pairs": [
+      [
+        "#393D90",
+        "#51AFCB"
+      ],
+      [
+        "#393D90",
+        "#51AFCB"
+      ],
+      [
+        "#CF71A9",
+        "#51AFCB"
+      ]
+    ]
+  },
+  {
+    "id": 13,
+    "x1": 46,
+    "y1": 1,
+    "x2": 50,
+    "y2": 12,
+    "shape": "aleluia_quadrados",
+    "variant": 10,
+    "color_fundo": "#CF71A9",
+    "color_padrao": "#6F4B99",
+    "seed": 964069900,
+    "recolor_count": 4,
+    "last_pairs": [
+      [
+        "#CF71A9",
+        "#393D90"
+      ],
+      [
+        "#CF71A9",
+        "#393D90"
+      ],
+      [
+        "#CF71A9",
+        "#6F4B99"
+      ]
+    ]
+  },
+  {
+    "id": 14,
+    "x1": 46,
+    "y1": 13,
+    "x2": 50,
+    "y2": 23,
+    "shape": "aleluia_triangulos",
+    "variant": 5,
+    "color_fundo": "#318B5B",
+    "color_padrao": "#C64638",
+    "seed": 1956550368,
+    "recolor_count": 4,
+    "last_pairs": [
+      [
+        "#51AFCB",
+        "#FF902E"
+      ],
+      [
+        "#51AFCB",
+        "#FF902E"
+      ],
+      [
+        "#318B5B",
+        "#C64638"
+      ]
+    ]
+  },
+  {
+    "id": 15,
+    "x1": 46,
+    "y1": 24,
+    "x2": 50,
+    "y2": 30,
+    "shape": "aleluia_triangulos",
+    "variant": 4,
+    "color_fundo": "#CF71A9",
+    "color_padrao": "#318B5B",
+    "seed": 1544354984,
+    "recolor_count": 4,
+    "last_pairs": [
+      [
+        "#C64638",
+        "#FF902E"
+      ],
+      [
+        "#C64638",
+        "#FF902E"
+      ],
+      [
+        "#CF71A9",
+        "#318B5B"
+      ]
+    ]
   }
 ]

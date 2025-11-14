@@ -305,7 +305,18 @@ function resolveColor(c) {
 // Prebuilt normalized paths in [0,1]x[0,1] space
 const PATH_CACHE = (function(){
   const tri = new Path2D();
-  tri.moveTo(0,0); tri.lineTo(1,0); tri.lineTo(0,1); tri.closePath();
+  // First triangle: (0, 0.5) -> (0, 1) -> (0.5, 1) -> back to (0, 0.5)
+  tri.moveTo(0, 0.5);
+  tri.lineTo(0, 1);
+  tri.lineTo(0.5, 1);
+  tri.closePath();
+  
+  // Second triangle: (0.5, 0) -> (1, 0) -> (1, 0.5) -> back to (0.5, 0)
+  tri.moveTo(0.5, 0);
+  tri.lineTo(1, 0);
+  tri.lineTo(1, 0.5);
+  tri.closePath();
+  
   const half = new Path2D();
   half.rect(0,0,0.5,1);
   return { triangle: tri, halfRect: half };
@@ -1562,6 +1573,8 @@ async function postEdit(region_id, action){
       showToast('Edit failed. Please try again.', 'error');
     }
   }
+
+
 
   // Recolor all regions
   const recolorAllBtn = document.getElementById('recolorAllBtn');
