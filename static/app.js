@@ -1,12 +1,12 @@
 // Default button colors (will be used as fallback and initial palette)
 const DEFAULT_BUTTON_COLORS = [
-  "#C64638", "#FF902E", "#FFD816", "#4F7A09", "#318B5B",
-  "#51AFCB", "#393D90", "#6F4B99", "#CF71A9"
+  "#f07a26", "#FFD003", "#533471", "#BB2B27", "#AED6A4",
+  "#3E6838", "#283780", "#3299D5", "#F2A8B7","#ECEB82","#000000","#FFFFFF"
 ];
-// Safety: ensure we always have 10 defaults for buttons 0..9
-if (DEFAULT_BUTTON_COLORS.length < 10) {
+// Safety: ensure we always have at least one default color
+if (DEFAULT_BUTTON_COLORS.length < 1) {
   const pad = DEFAULT_BUTTON_COLORS[DEFAULT_BUTTON_COLORS.length - 1] || '#000000';
-  while (DEFAULT_BUTTON_COLORS.length < 10) DEFAULT_BUTTON_COLORS.push(pad);
+  while (DEFAULT_BUTTON_COLORS.length < 1) DEFAULT_BUTTON_COLORS.push(pad);
 }
 
 // Persist session id via localStorage (survives browser restarts).
@@ -52,8 +52,8 @@ async function postJSON(url, data) {
 // Dynamically create button color/off inputs
 // `data` may be legacy format (string) or normalized objects { state: "on"|"off", color: "#hex" }.
 function isNarrowViewport(){ return (window.innerWidth || document.documentElement.clientWidth || 0) <= 768; }
-// Show only nine swatches in the UI
-const VISIBLE_PALETTE_COUNT = Math.min(9, DEFAULT_BUTTON_COLORS.length);
+// Show all default swatches in the UI
+const VISIBLE_PALETTE_COUNT = DEFAULT_BUTTON_COLORS.length;
 
 function renderButtonInputs(data) {
   const mobileC = document.getElementById('buttonInputsMobile');
@@ -146,7 +146,7 @@ async function fillForm() {
 
   // Normalize button fields into objects { state, color } so colors are never lost.
   let normalized = false;
-  for (let i = 0; i <= 9; i++) {
+  for (let i = 0; i < VISIBLE_PALETTE_COUNT; i++) {
     const key = `button_${i}`;
     const val = data[key];
     if (typeof val === "string") {
@@ -219,19 +219,13 @@ if (knobInitEl) {
   // Convert from cm (UI) to mm (stored/used)
   data.canvas_width = parseInt(document.getElementById('canvas_width').value) * 10;
   data.canvas_height = parseInt(document.getElementById('canvas_height').value) * 10;
-    // Persist nine visible buttons from DOM
+      // Persist all visible buttons from DOM
     for (let i = 0; i < VISIBLE_PALETTE_COUNT; i++) {
       const btnKey = `button_${i}`;
       const swatch = document.getElementById(btnKey + '_swatch');
       const color = (swatch && swatch.dataset && swatch.dataset.color) ? swatch.dataset.color : (DEFAULT_BUTTON_COLORS[i] || DEFAULT_BUTTON_COLORS[DEFAULT_BUTTON_COLORS.length-1]);
       const state = (swatch && !swatch.classList.contains('inactive')) ? "on" : "off";
       data[btnKey] = { state: state, color: color };
-    }
-    // For hidden buttons (index >= 9), keep them present but off to avoid server-side surprises
-    for (let i = VISIBLE_PALETTE_COUNT; i <= 9; i++) {
-      const btnKey = `button_${i}`;
-      const def = DEFAULT_BUTTON_COLORS[i] || DEFAULT_BUTTON_COLORS[DEFAULT_BUTTON_COLORS.length-1];
-      data[btnKey] = { state: 'off', color: def };
     }
     return data;
   }
@@ -829,19 +823,13 @@ async function autoSaveAndGenerate() {
   // Convert from cm (UI) to mm (stored/used)
   data.canvas_width = parseInt(document.getElementById('canvas_width').value) * 10;
   data.canvas_height = parseInt(document.getElementById('canvas_height').value) * 10;
-  // Persist nine visible buttons from DOM
+  // Persist all visible buttons from DOM
   for (let i = 0; i < VISIBLE_PALETTE_COUNT; i++) {
     const btnKey = `button_${i}`;
     const swatch = document.getElementById(btnKey + '_swatch');
     const color = (swatch && swatch.dataset && swatch.dataset.color) ? swatch.dataset.color : (DEFAULT_BUTTON_COLORS[i] || DEFAULT_BUTTON_COLORS[DEFAULT_BUTTON_COLORS.length-1]);
     const state = (swatch && !swatch.classList.contains('inactive')) ? "on" : "off";
     data[btnKey] = { state: state, color: color };
-  }
-  // Hidden buttons (>=9): present but off
-  for (let i = VISIBLE_PALETTE_COUNT; i <= 9; i++) {
-    const btnKey = `button_${i}`;
-    const def = DEFAULT_BUTTON_COLORS[i] || DEFAULT_BUTTON_COLORS[DEFAULT_BUTTON_COLORS.length-1];
-    data[btnKey] = { state: 'off', color: def };
   }
   await postJSON('/data.json', data);
 
@@ -958,10 +946,10 @@ async function firstRunBootstrap() {
     out.slider = 50;
     out.switch = 'center';
     // Pick 5 random active colors; keep the saved color values
-    const idx = Array.from({ length: 10 }, (_, i) => i);
+    const idx = Array.from({ length: VISIBLE_PALETTE_COUNT }, (_, i) => i);
     for (let i = idx.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); const t = idx[i]; idx[i] = idx[j]; idx[j] = t; }
-    const active = new Set(idx.slice(0, 5));
-    for (let i = 0; i < 10; i++) {
+    const active = new Set(idx.slice(0, Math.min(5, VISIBLE_PALETTE_COUNT)));
+    for (let i = 0; i < VISIBLE_PALETTE_COUNT; i++) {
       const key = `button_${i}`;
       const v = cur && cur[key];
       let color = DEFAULT_BUTTON_COLORS[i];
@@ -997,7 +985,7 @@ async function maybeApplyNewDefaultPalette() {
     let data = {};
     try { data = await loadJSON('data.json'); } catch (e) { data = {}; }
     let changed = false;
-    for (let i = 0; i < 10; i++) {
+    for (let i = 0; i < VISIBLE_PALETTE_COUNT; i++) {
       const key = `button_${i}`;
       const def = DEFAULT_BUTTON_COLORS[i] || DEFAULT_BUTTON_COLORS[DEFAULT_BUTTON_COLORS.length - 1] || '#FFFFFF';
       const cur = data[key];

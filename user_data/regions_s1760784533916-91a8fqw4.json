@@ -6,23 +6,23 @@
     "x2": 2,
     "y2": 3,
     "shape": "aleluia_triangulos",
-    "variant": 1,
-    "color_fundo": "#007EA7",
-    "color_padrao": "#f98686",
-    "seed": 1488400136,
-    "recolor_count": 12,
+    "variant": 3,
+    "color_fundo": "#3299D5",
+    "color_padrao": "#FFFFFF",
+    "seed": 229472976,
+    "recolor_count": 114,
     "last_pairs": [
       [
-        "#7081ff",
-        "#ff66de"
+        "#000000",
+        "#3299D5"
       ],
       [
-        "#7081ff",
-        "#ff66de"
+        "#000000",
+        "#3299D5"
       ],
       [
-        "#007EA7",
-        "#f98686"
+        "#3299D5",
+        "#FFFFFF"
       ]
     ]
   },
@@ -33,23 +33,23 @@
     "x2": 2,
     "y2": 5,
     "shape": "aleluia_quadrados",
-    "variant": 12,
-    "color_fundo": "#007EA7",
-    "color_padrao": "#bd7ef1",
-    "seed": 1943277192,
-    "recolor_count": 11,
+    "variant": 14,
+    "color_fundo": "#000000",
+    "color_padrao": "#283780",
+    "seed": 1544313168,
+    "recolor_count": 113,
     "last_pairs": [
       [
-        "#f98686",
-        "#007EA7"
+        "#3299D5",
+        "#FFFFFF"
       ],
       [
-        "#f98686",
-        "#007EA7"
+        "#3299D5",
+        "#FFFFFF"
       ],
       [
-        "#007EA7",
-        "#bd7ef1"
+        "#000000",
+        "#283780"
       ]
     ]
   },
@@ -60,23 +60,23 @@
     "x2": 4,
     "y2": 3,
     "shape": "aleluia_quadrados",
-    "variant": 4,
-    "color_fundo": "#bd7ef1",
-    "color_padrao": "#7081ff",
-    "seed": 433419984,
-    "recolor_count": 15,
+    "variant": 13,
+    "color_fundo": "#3299D5",
+    "color_padrao": "#FFFFFF",
+    "seed": 2015006124,
+    "recolor_count": 117,
     "last_pairs": [
       [
-        "#ff7b24",
-        "#bd7ef1"
+        "#FFFFFF",
+        "#3299D5"
       ],
       [
-        "#ff7b24",
-        "#bd7ef1"
+        "#FFFFFF",
+        "#3299D5"
       ],
       [
-        "#bd7ef1",
-        "#7081ff"
+        "#3299D5",
+        "#FFFFFF"
       ]
     ]
   },
@@ -88,22 +88,22 @@
     "y2": 5,
     "shape": "aleluia_quadrados",
     "variant": 2,
-    "color_fundo": "#fcff4d",
-    "color_padrao": "#f98686",
-    "seed": 1878744008,
-    "recolor_count": 12,
+    "color_fundo": "#FFFFFF",
+    "color_padrao": "#283780",
+    "seed": 1767654156,
+    "recolor_count": 114,
     "last_pairs": [
       [
-        "#007EA7",
-        "#ff7b24"
+        "#3299D5",
+        "#000000"
       ],
       [
-        "#007EA7",
-        "#ff7b24"
+        "#3299D5",
+        "#000000"
       ],
       [
-        "#fcff4d",
-        "#f98686"
+        "#FFFFFF",
+        "#283780"
       ]
     ]
   },
@@ -114,23 +114,23 @@
     "x2": 5,
     "y2": 3,
     "shape": "aleluia_quadrados",
-    "variant": 13,
-    "color_fundo": "#ff66de",
-    "color_padrao": "#bd7ef1",
-    "seed": 994828664,
-    "recolor_count": 11,
+    "variant": 1,
+    "color_fundo": "#3299D5",
+    "color_padrao": "#FFFFFF",
+    "seed": 1330849708,
+    "recolor_count": 113,
     "last_pairs": [
       [
-        "#ff7b24",
-        "#bd7ef1"
+        "#3299D5",
+        "#000000"
       ],
       [
-        "#ff7b24",
-        "#bd7ef1"
+        "#3299D5",
+        "#000000"
       ],
       [
-        "#ff66de",
-        "#bd7ef1"
+        "#3299D5",
+        "#FFFFFF"
       ]
     ]
   },
@@ -141,23 +141,23 @@
     "x2": 5,
     "y2": 5,
     "shape": "aleluia_triangulos",
-    "variant": 5,
-    "color_fundo": "#62fe74",
-    "color_padrao": "#7081ff",
-    "seed": 1335920168,
-    "recolor_count": 11,
+    "variant": 1,
+    "color_fundo": "#283780",
+    "color_padrao": "#FFFFFF",
+    "seed": 181052892,
+    "recolor_count": 113,
     "last_pairs": [
       [
-        "#ff7b24",
-        "#f98686"
+        "#000000",
+        "#FFFFFF"
       ],
       [
-        "#ff7b24",
-        "#f98686"
+        "#000000",
+        "#FFFFFF"
       ],
       [
-        "#62fe74",
-        "#7081ff"
+        "#283780",
+        "#FFFFFF"
       ]
     ]
   }
