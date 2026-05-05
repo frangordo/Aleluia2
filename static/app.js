@@ -1,7 +1,7 @@
 // Default button colors (will be used as fallback and initial palette)
 const DEFAULT_BUTTON_COLORS = [
-  "#f07a26", "#FFD003", "#533471", "#BB2B27", "#AED6A4",
-  "#3E6838", "#283780", "#3299D5", "#F2A8B7","#ECEB82","#000000","#FFFFFF"
+  "#f2df53","#ffc801", "#f46c21", "#e5334d", "#ef86a4",
+  "#59357c", "#5dc3db", "#3048b6", "#b2dbad","#3e5110","#19141b","#ffffff"
 ];
 // Safety: ensure we always have at least one default color
 if (DEFAULT_BUTTON_COLORS.length < 1) {
